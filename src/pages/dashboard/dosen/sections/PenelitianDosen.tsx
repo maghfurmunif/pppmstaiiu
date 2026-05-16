@@ -22,7 +22,7 @@ export default function PenelitianDosen() {
 
   const handleEnroll = () => {
     const newReg: PenelitianRegistration = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: '', // Let DB generate UUID
       dosenId,
       dosenName: localStorage.getItem('user_name') || 'Dosen Academic',
       status: 'ENROLL',
@@ -156,7 +156,7 @@ function PenelitianLogbookSection({ registration, onUpdate }: { registration: Pe
                {/* Simplified form for brevity in this complex flow */}
                <button onClick={() => {
                  const newLog: PenelitianLogbook = {
-                   id: Math.random().toString(),
+                   id: '',
                    date: '2024-05-16',
                    time: '10:00',
                    activity: 'Pengambilan Data Lapangan',

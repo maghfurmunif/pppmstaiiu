@@ -26,7 +26,7 @@ export default function PengabdianDosenSection() {
   const handleEnroll = async () => {
     if (!userId) return;
     const newReg: PengabdianRegistration = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: '', // Let DB generate UUID
       dosenId: userId,
       dosenName: localStorage.getItem('user_name') || 'Dosen',
       status: 'SUBMITTED',

@@ -57,7 +57,7 @@ export const penelitianService = {
       ...r,
       dosenId: r.dosen_id,
       dosenName: r.profiles?.full_name || 'Dosen',
-      logbooks: []
+      logbooks: r.logbooks || []
     }));
   },
 
@@ -77,22 +77,39 @@ export const penelitianService = {
       ...data,
       dosenId: data.dosen_id,
       dosenName: data.profiles?.full_name || 'Dosen',
-      logbooks: []
+      logbooks: data.logbooks || []
     };
   },
 
   saveRegistration: async (reg: PenelitianRegistration) => {
-    const { id, dosenId, dosenName, ...rest } = reg;
+    const dbPayload: any = {
+      dosen_id: reg.dosenId,
+      status: reg.status,
+      rejectionReason: reg.rejectionReason,
+      proposalFile: reg.proposalFile,
+      semproInfo: reg.semproInfo,
+      semproProof: reg.semproProof,
+      logbooks: reg.logbooks,
+      resultFile: reg.resultFile,
+      finalSemproInfo: reg.finalSemproInfo,
+      finalSemproProof: reg.finalSemproProof,
+      finalRevisionFile: reg.finalRevisionFile,
+      publication: reg.publication,
+      updated_at: new Date().toISOString()
+    };
+
+    if (reg.id && reg.id.length > 20) {
+      dbPayload.id = reg.id;
+    }
+
     const { error } = await supabase
       .from('penelitian_registrations')
-      .upsert({ 
-        id, 
-        ...rest, 
-        dosen_id: dosenId,
-        updated_at: new Date().toISOString()
-      });
+      .upsert(dbPayload);
 
-    if (error) throw error;
+    if (error) {
+       console.error('Penelitian Upsert Error:', error);
+       throw error;
+    }
   },
   
   getDokumentasi: async (dosenId?: string): Promise<DosenDokumentasi[]> => {

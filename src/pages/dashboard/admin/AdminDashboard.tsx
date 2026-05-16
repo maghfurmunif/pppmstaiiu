@@ -1,5 +1,5 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   BarChart3, Users, BookOpen, GraduationCap, 
   FlaskConical, HeartHandshake, Settings, 
@@ -178,12 +178,15 @@ function AdminOverview() {
   });
 
   useEffect(() => {
-    const regs = kknService.getRegistrations();
-    setStatsData(prev => ({
-      ...prev,
-      kknAktif: regs.filter(r => r.status !== 'COMPLETED' && r.status !== 'REJECTED').length,
-      alerts: regs.filter(r => r.status.includes('PENDING') || r.status === 'SUBMITTED').length
-    }));
+    const fetchData = async () => {
+      const regs = await kknService.getRegistrations();
+      setStatsData(prev => ({
+        ...prev,
+        kknAktif: regs.filter(r => r.status !== 'COMPLETED' && r.status !== 'REJECTED').length,
+        alerts: regs.filter(r => r.status.includes('PENDING') || r.status === 'SUBMITTED').length
+      }));
+    };
+    fetchData();
   }, []);
 
   const data = [

@@ -33,7 +33,7 @@ export default function KKNSection({ type }: KKNSectionProps) {
   const handleEnroll = async () => {
     if (!userId) return;
     const newReg: KKNRegistration = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: '', // Let DB generate UUID
       studentId: userId,
       studentName: localStorage.getItem('user_name') || 'Student',
       type: type,
@@ -269,7 +269,17 @@ function RegistrationStep({ registration, onUpdate }: { registration: KKNRegistr
                 )}>
                   {uploading === r.id ? <Loader2 className="animate-spin" size={16} /> : <FileUp size={16} />}
                 </div>
-                <span className="text-sm font-bold text-slate-700">{r.label}</span>
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-slate-700">{r.label}</span>
+                  {registration.docs[r.id] && typeof registration.docs[r.id] === 'string' && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); window.open(registration.docs[r.id] as string, '_blank'); }}
+                      className="text-[8px] font-black text-primary hover:underline text-left mt-0.5 uppercase tracking-widest"
+                    >
+                      Lihat File Terunggah
+                    </button>
+                  )}
+                </div>
               </div>
               {registration.docs[r.id] ? (
                  <div className="flex items-center space-x-2">
@@ -569,7 +579,7 @@ function LogbookStep({ registration, onUpdate }: { registration: KKNRegistration
     e.preventDefault();
     const hours = kknService.calculateHours(form.startTime!, form.endTime!);
     const newEntry: KKNLogbook = {
-      id: Math.random().toString(16),
+      id: '',
       ...form as any,
       hours,
       status: 'PENDING',

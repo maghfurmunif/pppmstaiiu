@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { motion } from 'motion/react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn, AlertCircle, ArrowRight } from 'lucide-react';
@@ -10,6 +10,16 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    // If already logged in, redirect to appropriate dashboard
+    const savedRole = localStorage.getItem('user_role');
+    if (savedRole) {
+      if (savedRole === 'ADMIN') navigate('/dashboard/admin');
+      else if (savedRole === 'DOSEN') navigate('/dashboard/dosen');
+      else navigate('/dashboard/mahasiswa');
+    }
+  }, [navigate]);
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -37,7 +47,7 @@ export default function LoginPage() {
         // Fallback or handle missing profile
       }
 
-      const userRole = profile?.role || 'MAHASISWA';
+      const userRole = (profile?.role || 'MAHASISWA').toUpperCase();
       const userId = authData.user.id;
       const userName = profile?.full_name || 'User Portal';
 
@@ -83,12 +93,12 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] block ml-1">Email Institusi</label>
                 <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none" size={18} />
                   <input 
                     type="email" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="input-field pl-12 bg-white/50 focus:bg-white" 
+                    className="input-field input-with-icon bg-white/50 focus:bg-white" 
                     placeholder="name@portal.ac.id"
                     required
                   />
@@ -101,12 +111,12 @@ export default function LoginPage() {
                   <button type="button" className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Forgot?</button>
                 </div>
                 <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none" size={18} />
                   <input 
                     type="password" 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="input-field pl-12 bg-white/50 focus:bg-white" 
+                    className="input-field input-with-icon bg-white/50 focus:bg-white" 
                     placeholder="••••••••"
                     required
                   />

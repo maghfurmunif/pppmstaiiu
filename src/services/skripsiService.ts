@@ -41,7 +41,7 @@ export const skripsiService = {
       ...r,
       studentId: r.student_id,
       studentName: r.profiles?.full_name || 'Student',
-      logbooks: []
+      logbooks: r.logbooks || []
     }));
   },
 
@@ -61,22 +61,37 @@ export const skripsiService = {
       ...data,
       studentId: data.student_id,
       studentName: data.profiles?.full_name || 'Student',
-      logbooks: []
+      logbooks: data.logbooks || []
     };
   },
 
   saveRegistration: async (reg: SkripsiRegistration) => {
-    const { id, studentId, studentName, ...rest } = reg;
+    const dbPayload: any = {
+      student_id: reg.studentId,
+      status: reg.status,
+      rejectionReason: reg.rejectionReason,
+      registrationDocs: reg.registrationDocs,
+      advisor: reg.advisor,
+      logbooks: reg.logbooks,
+      finalDocs: reg.finalDocs,
+      examSchedule: reg.examSchedule,
+      afterExamDocs: reg.afterExamDocs,
+      grades: reg.grades,
+      updated_at: new Date().toISOString()
+    };
+
+    if (reg.id && reg.id.length > 20) {
+      dbPayload.id = reg.id;
+    }
+
     const { error } = await supabase
       .from('skripsi_registrations')
-      .upsert({ 
-        id, 
-        ...rest, 
-        student_id: studentId,
-        updated_at: new Date().toISOString()
-      });
+      .upsert(dbPayload);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Skripsi Upsert Error:', error);
+      throw error;
+    }
   },
 
   calculateFinalGrade: (naskah: number, sidang: number) => {

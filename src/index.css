@@ -36,6 +36,10 @@ body {
   @apply w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 outline-none transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary/50;
 }
 
+.input-with-icon {
+  @apply pl-14!;
+}
+
 .card {
   @apply bg-white rounded-3xl shadow-sm border border-slate-100 p-6;
 }

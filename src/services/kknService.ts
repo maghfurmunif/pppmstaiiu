@@ -53,8 +53,9 @@ export const kknService = {
       ...r,
       studentId: r.student_id,
       studentName: r.profiles?.full_name || 'Student',
-      logbooks: [], // Logbooks usually fetched separately or joined
-      totalHours: 0
+      // Ensure these are arrays/numbers and don't overwrite if they exist in DB
+      logbooks: r.logbooks || [],
+      totalHours: r.totalHours || 0
     }));
   },
 
@@ -74,25 +75,41 @@ export const kknService = {
     return {
       ...data,
       studentId: data.student_id,
-      studentName: data.profiles?.full_name || 'Student',
-      logbooks: [], 
-      totalHours: 0
+      studentName: data.profiles?.full_name || 'Student'
     };
   },
 
   saveRegistration: async (reg: KKNRegistration) => {
-    const { id, studentId, studentName, ...rest } = reg;
-    const dbPayload = {
-      ...rest,
-      student_id: studentId,
+    // Pick ONLY columns that exist in the database table
+    const dbPayload: any = {
+      student_id: reg.studentId,
+      type: reg.type,
+      status: reg.status,
+      rejectionReason: reg.rejectionReason,
+      docs: reg.docs,
+      info: reg.info,
+      surveyDocs: reg.surveyDocs,
+      rkl: reg.rkl,
+      deployment: reg.deployment,
+      logbooks: reg.logbooks,
+      totalHours: reg.totalHours,
+      lpk: reg.lpk,
+      grades: reg.grades,
       updated_at: new Date().toISOString()
     };
 
+    if (reg.id && reg.id.length > 20) {
+      dbPayload.id = reg.id;
+    }
+
     const { error } = await supabase
       .from('kkn_registrations')
-      .upsert({ id, ...dbPayload });
+      .upsert(dbPayload);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Detailed Upsert Error:', error);
+      throw error;
+    }
   },
 
   updateRegistration: async (reg: KKNRegistration) => {

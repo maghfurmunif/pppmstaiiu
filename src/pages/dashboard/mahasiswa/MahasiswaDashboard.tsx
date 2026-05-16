@@ -1,6 +1,6 @@
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { LayoutDashboard, Users, UserCheck, BookOpen, GraduationCap, ArrowLeft, Loader2, ArrowRight, LogOut, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { LayoutDashboard, Users, UserCheck, BookOpen, GraduationCap, ArrowLeft, Loader2, ArrowRight, LogOut, Check, Bell, Layers } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { supabase } from '@/src/lib/supabase';
@@ -281,7 +281,7 @@ function DashboardOverview() {
                      <span className="text-sm font-bold text-slate-300">{item.name}</span>
                      {item.checked ? (
                        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white">
-                         <Check size={14} strokeWidth={4} />
+                         <CheckIcon size={14} strokeWidth={4} />
                        </div>
                      ) : (
                        <div className="w-6 h-6 rounded-full border-2 border-slate-700" />
@@ -304,7 +304,7 @@ function DashboardOverview() {
   );
 }
 
-function Check({ size, strokeWidth }: { size: number, strokeWidth: number }) {
+function CheckIcon({ size, strokeWidth }: { size: number, strokeWidth: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 6 9 17 4 12" />

@@ -9,6 +9,12 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const savedRole = localStorage.getItem('user_role');
+    if (savedRole) {
+      navigate(`/dashboard/${savedRole.toLowerCase()}`);
+      return;
+    }
+
     const checkLogin = () => {
       setIsLoggedIn(!!localStorage.getItem('user_role'));
       setUserRole(localStorage.getItem('user_role') || 'MAHASISWA');

@@ -48,11 +48,11 @@ export default function SemproSection() {
   const handleEnroll = async () => {
     if (!userId || !docs.proposal) return;
     const newReg: SemproRegistration = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: '', // Let DB generate UUID
       studentId: userId,
       studentName: localStorage.getItem('user_name') || 'Student',
-      status: 'PENDING',
-      fileProposal: docs.proposal
+      status: 'SUBMITTED',
+      proposalFile: docs.proposal
     };
     await semproService.saveRegistration(newReg);
     setRegistration(newReg);
@@ -156,7 +156,7 @@ export default function SemproSection() {
         </div>
       ) : (
         <AnimatePresence mode="wait">
-           {registration.status === 'PENDING' && (
+           {registration.status === 'SUBMITTED' && (
              <div className="card p-20 text-center space-y-6">
                 <Loader2 className="animate-spin text-primary mx-auto" size={48} />
                 <h3 className="text-2xl font-bold text-slate-900 italic">Menunggu Review Admin</h3>

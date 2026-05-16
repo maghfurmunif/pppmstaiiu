@@ -13,13 +13,18 @@ export default function AdminSkripsi() {
   const [selectedReg, setSelectedReg] = useState<SkripsiRegistration | null>(null);
 
   useEffect(() => {
-    setRegistrations(skripsiService.getRegistrations());
+    const fetchData = async () => {
+      const data = await skripsiService.getRegistrations();
+      setRegistrations(data);
+    };
+    fetchData();
   }, []);
 
-  const refresh = () => {
-    setRegistrations(skripsiService.getRegistrations());
+  const refresh = async () => {
+    const data = await skripsiService.getRegistrations();
+    setRegistrations(data);
     if (selectedReg) {
-      setSelectedReg(skripsiService.getRegistrations().find(r => r.id === selectedReg.id) || null);
+      setSelectedReg(data.find(r => r.id === selectedReg.id) || null);
     }
   };
 
@@ -58,14 +63,20 @@ export default function AdminSkripsi() {
                    <GraduationCap className="text-white/10" size={48} />
                 </div>
 
-                {selectedReg.status === 'SUBMITTED' && (
+                 {selectedReg.status === 'SUBMITTED' && (
                   <div className="card p-8 space-y-6">
                      <h3 className="font-bold italic">Validasi Syarat Pendaftaran</h3>
                      <div className="grid grid-cols-2 gap-3">
                         {Object.entries(selectedReg.registrationDocs || {}).map(([k, v]) => (
                           <div key={k} className="p-3 bg-slate-50 rounded-xl flex items-center justify-between">
                              <span className="text-[10px] font-bold text-slate-600 uppercase">{k.replace(/([A-Z])/g, ' $1')}</span>
-                             <CheckCircle2 className="text-primary" size={14} />
+                             {typeof v === 'string' && v.startsWith('http') ? (
+                               <button onClick={() => window.open(v, '_blank')}>
+                                 <Eye size={14} className="text-primary cursor-pointer" />
+                               </button>
+                             ) : (
+                               <CheckCircle2 className="text-primary" size={14} />
+                             )}
                           </div>
                         ))}
                      </div>
@@ -74,10 +85,13 @@ export default function AdminSkripsi() {
                         <input id="adv" placeholder="Nama Dosen Pembimbing..." className="input-field" />
                         <div className="flex gap-4">
                            <button 
-                             onClick={() => {
-                               selectedReg.status = 'APPROVED';
-                               selectedReg.advisor = { name: (document.getElementById('adv') as HTMLInputElement).value };
-                               skripsiService.saveRegistration(selectedReg);
+                             onClick={async () => {
+                               const updated = { 
+                                 ...selectedReg, 
+                                 status: 'APPROVED' as const,
+                                 advisor: { name: (document.getElementById('adv') as HTMLInputElement).value }
+                               };
+                               await skripsiService.saveRegistration(updated);
                                refresh();
                              }}
                              className="btn-primary flex-grow"
@@ -97,12 +111,25 @@ export default function AdminSkripsi() {
                      <div className="space-y-3">
                         {selectedReg.logbooks.map(log => (
                           <div key={log.id} className="p-4 bg-slate-50 rounded-2xl flex justify-between items-center">
-                             <div className="text-xs font-bold text-slate-700">{log.date}: {log.topic}</div>
+                             <div className="flex flex-col">
+                                <div className="text-xs font-bold text-slate-700">{log.date}: {log.topic}</div>
+                                {log.photo && (
+                                  <button 
+                                    onClick={() => window.open(log.photo, '_blank')}
+                                    className="text-[9px] font-bold text-primary flex items-center mt-1"
+                                  >
+                                    <Eye size={10} className="mr-1" /> LIHAT DOKUMENTASI
+                                  </button>
+                                )}
+                             </div>
                              {log.status === 'PENDING' ? (
                                <button 
-                                 onClick={() => {
-                                   log.status = 'APPROVED';
-                                   skripsiService.saveRegistration(selectedReg);
+                                 onClick={async () => {
+                                   const updatedLogbooks = selectedReg.logbooks.map(l => 
+                                     l.id === log.id ? { ...l, status: 'APPROVED' as const } : l
+                                   );
+                                   const updated = { ...selectedReg, logbooks: updatedLogbooks };
+                                   await skripsiService.saveRegistration(updated);
                                    refresh();
                                  }}
                                  className="text-[10px] font-black text-primary hover:underline"

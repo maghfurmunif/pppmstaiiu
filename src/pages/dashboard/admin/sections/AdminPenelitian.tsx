@@ -160,7 +160,14 @@ function ProposalAction({ reg, onAction }: { reg: PenelitianRegistration, onActi
              <FileText className="text-primary" />
              <span className="text-sm font-bold text-slate-700">Proposal_Dosen.pdf</span>
           </div>
-          <button className="text-[10px] font-black text-primary hover:underline uppercase tracking-widest">Lihat File</button>
+          {reg.proposalFile && (
+            <button 
+              onClick={() => window.open(reg.proposalFile, '_blank')}
+              className="text-[10px] font-black text-primary hover:underline uppercase tracking-widest"
+            >
+              Lihat File
+            </button>
+          )}
        </div>
 
        <div className="space-y-6">

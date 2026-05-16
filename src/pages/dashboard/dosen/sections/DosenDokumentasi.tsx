@@ -27,7 +27,7 @@ export default function DosenDokumentasiSection() {
     if (!userId) return;
     const formData = new FormData(e.target as HTMLFormElement);
     const newDoc: DosenDokumentasi = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: '', // Let DB generate UUID
       dosenId: userId,
       jenisKarya: formData.get('jenis') as string,
       judul: formData.get('judul') as string,

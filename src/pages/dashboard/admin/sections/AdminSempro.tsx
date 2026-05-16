@@ -14,13 +14,18 @@ export default function AdminSempro() {
   const [selectedReg, setSelectedReg] = useState<SemproRegistration | null>(null);
 
   useEffect(() => {
-    setRegistrations(semproService.getRegistrations());
+    const fetchData = async () => {
+      const data = await semproService.getRegistrations();
+      setRegistrations(data);
+    };
+    fetchData();
   }, []);
 
-  const refresh = () => {
-    setRegistrations(semproService.getRegistrations());
+  const refresh = async () => {
+    const data = await semproService.getRegistrations();
+    setRegistrations(data);
     if (selectedReg) {
-      setSelectedReg(semproService.getRegistrations().find(r => r.id === selectedReg.id) || null);
+      setSelectedReg(data.find(r => r.id === selectedReg.id) || null);
     }
   };
 
@@ -53,15 +58,22 @@ export default function AdminSempro() {
                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Status: {selectedReg.status}</p>
                 </div>
 
-                {selectedReg.status === 'ENROLL' && (
+                 {selectedReg.status === 'ENROLL' && (
                   <div className="card p-8 space-y-6">
                      <h3 className="font-bold italic">Review Proposal Awal</h3>
-                     <button className="btn-primary w-full py-4 text-[10px] bg-slate-800"><Download size={14} className="mr-2" /> Download Proposal Mahasiswa</button>
+                     {selectedReg.proposalFile && (
+                       <button 
+                         onClick={() => window.open(selectedReg.proposalFile, '_blank')}
+                         className="btn-primary w-full py-4 text-[10px] bg-slate-800"
+                       >
+                         <Eye size={14} className="mr-2" /> Lihat Proposal Mahasiswa
+                       </button>
+                     )}
                      <div className="flex gap-4">
                         <button 
-                          onClick={() => {
-                            selectedReg.status = 'APPROVED';
-                            semproService.saveRegistration(selectedReg);
+                          onClick={async () => {
+                            const updated = { ...selectedReg, status: 'APPROVED' as const };
+                            await semproService.saveRegistration(updated);
                             refresh();
                           }}
                           className="btn-primary flex-grow"
@@ -81,16 +93,16 @@ export default function AdminSempro() {
                         <input type="text" placeholder="Ruangan" className="input-field text-xs" id="ruang" />
                      </div>
                      <button 
-                       onClick={() => {
-                         selectedReg.status = 'SCHEDULED';
-                         selectedReg.schedule = {
+                       onClick={async () => {
+                         const schedule = {
                            tanggal: (document.getElementById('tgl') as HTMLInputElement).value,
                            hari: (document.getElementById('hari') as HTMLInputElement).value,
                            pukul: (document.getElementById('jam') as HTMLInputElement).value,
                            ruang: (document.getElementById('ruang') as HTMLInputElement).value,
                            sifat: 'Terbuka'
                          };
-                         semproService.saveRegistration(selectedReg);
+                         const updated = { ...selectedReg, status: 'SCHEDULED' as const, schedule };
+                         await semproService.saveRegistration(updated);
                          refresh();
                        }}
                        className="btn-primary w-full"
@@ -102,11 +114,18 @@ export default function AdminSempro() {
                   <div className="card p-8 space-y-6">
                      <h3 className="font-bold italic">Validasi Dokumentasi Seminar</h3>
                      <p className="text-xs text-slate-400">Mahasiswa telah mengunggah bukti seminar.</p>
+                     {selectedReg.proof && (
+                        <button 
+                          onClick={() => window.open(selectedReg.proof, '_blank')}
+                          className="btn-primary w-full py-4 bg-slate-800 mb-2"
+                        >
+                          <Eye size={14} className="mr-2" /> Lihat Bukti Dokumentasi
+                        </button>
+                     )}
                      <button 
-                       onClick={() => {
-                         selectedReg.status = 'COMPLETED';
-                         selectedReg.grade = 'A-';
-                         semproService.saveRegistration(selectedReg);
+                       onClick={async () => {
+                         const updated = { ...selectedReg, status: 'COMPLETED' as const, grade: 'A-' };
+                         await semproService.saveRegistration(updated);
                          refresh();
                        }}
                        className="btn-primary w-full py-5"

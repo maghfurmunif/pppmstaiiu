@@ -154,9 +154,9 @@ export default function RegisterPage() {
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] block ml-1">Full Name</label>
                     <div className="relative group">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none" size={18} />
                       <input 
-                        className="input-field pl-12 bg-white/50" 
+                        className="input-field input-with-icon bg-white/50" 
                         placeholder="Your full name" 
                         required
                         value={formData.fullName}
@@ -223,15 +223,15 @@ export default function RegisterPage() {
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] block ml-1">Portal Email</label>
                     <div className="relative group">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
-                      <input type="email" className="input-field pl-12 bg-white/50" placeholder="name@portal.ac.id" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none" size={18} />
+                      <input type="email" className="input-field input-with-icon bg-white/50" placeholder="name@portal.ac.id" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] block ml-1">Secure Password</label>
                     <div className="relative group">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
-                      <input type="password" className="input-field pl-12 bg-white/50" placeholder="••••••••" required value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} />
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none" size={18} />
+                      <input type="password" className="input-field input-with-icon bg-white/50" placeholder="••••••••" required value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} />
                     </div>
                   </div>
                 </div>

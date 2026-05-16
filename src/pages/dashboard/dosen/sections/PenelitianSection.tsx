@@ -23,7 +23,7 @@ export default function PenelitianSection() {
   const handleEnroll = async () => {
     if (!userId) return;
     const newReg: PenelitianRegistration = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: '', // Let DB generate UUID
       dosenId: userId,
       dosenName: localStorage.getItem('user_name') || 'Dosen',
       status: 'SUBMITTED',
@@ -283,5 +283,4 @@ function PublicationStep({ registration, onUpdate }: { registration: PenelitianR
         )}
      </motion.div>
    );
-}
 }

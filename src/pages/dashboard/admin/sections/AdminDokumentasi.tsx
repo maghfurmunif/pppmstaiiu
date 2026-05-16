@@ -77,8 +77,11 @@ export default function AdminDokumentasi() {
                        <span className="text-[10px] font-black text-slate-400 uppercase">{doc.platform}</span>
                     </div>
                   </td>
-                  <td className="px-8 py-6 text-right">
-                    <button className="p-3 bg-white border border-slate-200 rounded-xl text-primary hover:border-primary transition-all shadow-sm">
+                   <td className="px-8 py-6 text-right">
+                    <button 
+                      onClick={() => doc.fileUrl && window.open(doc.fileUrl, '_blank')}
+                      className="p-3 bg-white border border-slate-200 rounded-xl text-primary hover:border-primary transition-all shadow-sm"
+                    >
                       <ExternalLink size={16} />
                     </button>
                   </td>

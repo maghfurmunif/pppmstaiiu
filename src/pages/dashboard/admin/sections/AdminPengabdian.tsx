@@ -158,20 +158,24 @@ function PengabdianApproval({ reg, onAction }: { reg: PengabdianRegistration, on
           <span className="px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-[10px] font-black uppercase">Review Required</span>
        </div>
        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-             <div className="flex items-center space-x-3">
-                <FileText className="text-primary" />
-                <span className="text-sm font-bold text-slate-700">Surat_Tugas.pdf</span>
+             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                <div className="flex items-center space-x-3">
+                   <FileText className="text-primary" />
+                   <span className="text-sm font-bold text-slate-700">Surat_Tugas.pdf</span>
+                </div>
+                <button onClick={() => reg.suratTugas && window.open(reg.suratTugas, '_blank')}>
+                   <Eye size={18} className="text-primary cursor-pointer hover:scale-110 transition-transform" />
+                </button>
              </div>
-             <Eye size={18} className="text-slate-400 cursor-pointer" />
-          </div>
-          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-             <div className="flex items-center space-x-3">
-                <FileText className="text-primary" />
-                <span className="text-sm font-bold text-slate-700">Proposal_Pengabdian.pdf</span>
+             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                <div className="flex items-center space-x-3">
+                   <FileText className="text-primary" />
+                   <span className="text-sm font-bold text-slate-700">Proposal_Pengabdian.pdf</span>
+                </div>
+                <button onClick={() => reg.proposalFile && window.open(reg.proposalFile, '_blank')}>
+                   <Eye size={18} className="text-primary cursor-pointer hover:scale-110 transition-transform" />
+                </button>
              </div>
-             <Eye size={18} className="text-slate-400 cursor-pointer" />
-          </div>
        </div>
        <div className="flex gap-4 pt-4">
           <button onClick={handleApprove} className="btn-primary flex-grow py-5 text-xs">Setujui & Terbitkan Surat Jalan</button>

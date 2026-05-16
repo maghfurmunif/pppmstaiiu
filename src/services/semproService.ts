@@ -13,6 +13,10 @@ export interface SemproRegistration {
   schedule?: any;
   proof?: any;
   grade?: string;
+  postSeminar?: {
+    dokumentasi: string[];
+    catatan: string[];
+  };
 }
 
 export const semproService = {
@@ -53,16 +57,28 @@ export const semproService = {
   },
 
   saveRegistration: async (reg: SemproRegistration) => {
-    const { id, studentId, studentName, ...rest } = reg;
+    const dbPayload: any = {
+      student_id: reg.studentId,
+      status: reg.status,
+      rejectionReason: reg.rejectionReason,
+      proposalFile: reg.proposalFile,
+      schedule: reg.schedule,
+      proof: reg.proof,
+      grade: reg.grade,
+      updated_at: new Date().toISOString()
+    };
+
+    if (reg.id && reg.id.length > 20) {
+      dbPayload.id = reg.id;
+    }
+
     const { error } = await supabase
       .from('sempro_registrations')
-      .upsert({ 
-        id, 
-        ...rest, 
-        student_id: studentId,
-        updated_at: new Date().toISOString()
-      });
+      .upsert(dbPayload);
 
-    if (error) throw error;
+    if (error) {
+       console.error('Sempro Upsert Error:', error);
+       throw error;
+    }
   }
 };

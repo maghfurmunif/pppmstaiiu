@@ -44,7 +44,7 @@ export default function SkripsiSection() {
   const handleEnroll = async (docs: any) => {
     if (!userId) return;
     const newReg: SkripsiRegistration = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: '', // Let DB generate UUID
       studentId: userId,
       studentName: localStorage.getItem('user_name') || 'Student',
       status: 'SUBMITTED',
@@ -286,7 +286,7 @@ function SkripsiBimbingan({ registration, onUpdate }: { registration: SkripsiReg
     e.preventDefault();
     if (!form.photo) return;
     const newLog: SkripsiLogbook = {
-      id: Math.random().toString(16),
+      id: '',
       ...form as any,
       status: 'PENDING'
     };
@@ -346,7 +346,14 @@ function SkripsiBimbingan({ registration, onUpdate }: { registration: SkripsiReg
                   <div className="flex items-start space-x-4">
                      <div className="p-3 bg-slate-50 rounded-xl text-primary font-black text-xs">{log.date.split('-').reverse().join('/')}</div>
                      <div className="space-y-1">
-                        <h5 className="font-bold text-slate-800">{log.topic}</h5>
+                        <div className="flex items-center space-x-2">
+                           <h5 className="font-bold text-slate-800">{log.topic}</h5>
+                           {log.photo && (
+                              <button onClick={() => window.open(log.photo, '_blank')}>
+                                 <Eye size={12} className="text-primary opacity-50 hover:opacity-100" />
+                              </button>
+                           )}
+                        </div>
                         <p className="text-xs text-slate-400 italic line-clamp-1">"{log.comment}"</p>
                      </div>
                   </div>

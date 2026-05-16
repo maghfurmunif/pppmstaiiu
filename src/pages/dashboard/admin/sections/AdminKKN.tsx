@@ -16,13 +16,18 @@ export default function AdminKKN() {
   const [selectedReg, setSelectedReg] = useState<KKNRegistration | null>(null);
 
   useEffect(() => {
-    setRegistrations(kknService.getRegistrations());
+    const fetchData = async () => {
+      const data = await kknService.getRegistrations();
+      setRegistrations(data);
+    };
+    fetchData();
   }, []);
 
-  const refreshData = () => {
-    setRegistrations(kknService.getRegistrations());
+  const refreshData = async () => {
+    const data = await kknService.getRegistrations();
+    setRegistrations(data);
     if (selectedReg) {
-      setSelectedReg(kknService.getRegistrations().find(r => r.id === selectedReg.id) || null);
+      setSelectedReg(data.find(r => r.id === selectedReg.id) || null);
     }
   };
 
@@ -185,6 +190,7 @@ export default function AdminKKN() {
 
 function RegistrationApproval({ reg, onAction }: { reg: KKNRegistration, onAction: () => void }) {
   const [reason, setReason] = useState('');
+  const [loading, setLoading] = useState(false);
   const [info, setInfo] = useState({
      lokasi: 'Desa Mentaras',
      kelompok: 'Kelompok 04',
@@ -195,18 +201,33 @@ function RegistrationApproval({ reg, onAction }: { reg: KKNRegistration, onActio
      lokasiSosialisasi: 'Gedung Serbaguna Desa'
   });
 
-  const handleApprove = () => {
-    reg.status = 'APPROVED';
-    reg.info = info as any;
-    kknService.updateRegistration(reg);
-    onAction();
+  const handleApprove = async () => {
+    setLoading(true);
+    try {
+      const updatedReg = { ...reg, status: 'APPROVED' as KKNStatus, info: info as any };
+      await kknService.updateRegistration(updatedReg);
+      onAction();
+    } catch (error) {
+      console.error('Error approving registration:', error);
+      alert('Gagal menyetujui pendaftaran. Silakan coba lagi.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReject = () => {
-    reg.status = 'REJECTED';
-    reg.rejectionReason = reason;
-    kknService.updateRegistration(reg);
-    onAction();
+  const handleReject = async () => {
+    if (!reason) return alert('Mohon isi alasan penolakan.');
+    setLoading(true);
+    try {
+      const updatedReg = { ...reg, status: 'REJECTED' as KKNStatus, rejectionReason: reason };
+      await kknService.updateRegistration(updatedReg);
+      onAction();
+    } catch (error) {
+      console.error('Error rejecting registration:', error);
+      alert('Gagal menolak pendaftaran.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -222,7 +243,13 @@ function RegistrationApproval({ reg, onAction }: { reg: KKNRegistration, onActio
                 {Object.entries(reg.docs).map(([key, ok]) => (
                   <div key={key} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                      <span className="text-xs font-bold text-slate-700 capitalize">{key}</span>
-                     <Eye size={16} className="text-primary cursor-pointer hover:scale-110 transition-transform" />
+                     {typeof ok === 'string' && ok.startsWith('http') ? (
+                       <button onClick={() => window.open(ok, '_blank')}>
+                         <Eye size={16} className="text-primary cursor-pointer hover:scale-110 transition-transform" />
+                       </button>
+                     ) : (
+                       <span className="text-[8px] font-black text-slate-300 uppercase">No File</span>
+                     )}
                   </div>
                 ))}
              </div>
@@ -231,8 +258,22 @@ function RegistrationApproval({ reg, onAction }: { reg: KKNRegistration, onActio
              <div className="space-y-4">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tindakan Cepat</p>
                 <div className="grid grid-cols-2 gap-4">
-                   <button onClick={handleApprove} className="btn-primary flex items-center justify-center py-4 text-[10px]"><CheckCircle2 className="mr-2" size={16} /> Terima</button>
-                   <button onClick={handleReject} className="btn-primary bg-red-600 hover:bg-red-700 flex items-center justify-center py-4 text-[10px]"><XCircle className="mr-2" size={16} /> Tolak</button>
+                   <button 
+                     disabled={loading}
+                     onClick={handleApprove} 
+                     className="btn-primary flex items-center justify-center py-4 text-[10px] disabled:opacity-50"
+                   >
+                     {loading ? <Activity className="animate-spin mr-2" size={16} /> : <CheckCircle2 className="mr-2" size={16} />} 
+                     Terima
+                   </button>
+                   <button 
+                     disabled={loading}
+                     onClick={handleReject} 
+                     className="btn-primary bg-red-600 hover:bg-red-700 flex items-center justify-center py-4 text-[10px] disabled:opacity-50"
+                   >
+                     {loading ? <Activity className="animate-spin mr-2" size={16} /> : <XCircle className="mr-2" size={16} />} 
+                     Tolak
+                   </button>
                 </div>
                 {reg.status !== 'APPROVED' && (
                   <textarea 
@@ -259,11 +300,23 @@ function RegistrationApproval({ reg, onAction }: { reg: KKNRegistration, onActio
 }
 
 function SurveyApproval({ reg, onAction }: { reg: KKNRegistration, onAction: () => void }) {
-  const handleApprove = () => {
-    reg.status = 'RKL';
-    if (reg.surveyDocs) reg.surveyDocs.status = 'APPROVED';
-    kknService.updateRegistration(reg);
-    onAction();
+  const [loading, setLoading] = useState(false);
+  const handleApprove = async () => {
+    setLoading(true);
+    try {
+      const updated = {
+        ...reg,
+        status: 'RKL' as KKNStatus,
+        surveyDocs: reg.surveyDocs ? { ...reg.surveyDocs, status: 'APPROVED' as const } : undefined
+      };
+      await kknService.updateRegistration(updated);
+      onAction();
+    } catch (error) {
+       console.error('Error approving survey:', error);
+       alert('Gagal menyetujui survey.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -273,18 +326,41 @@ function SurveyApproval({ reg, onAction }: { reg: KKNRegistration, onAction: () 
           <div className="space-y-3">
              <p className="text-[10px] font-black text-slate-400 uppercase">Foto Sosialisasi</p>
              <div className="grid grid-cols-3 gap-2">
-                {[1, 2, 3].map(i => <div key={i} className="aspect-square bg-slate-100 rounded-lg flex items-center justify-center text-slate-300"><Eye size={16}/></div>)}
+                {reg.surveyDocs?.sosialisasi?.map((url, i) => (
+                   <div 
+                     key={i} 
+                     onClick={() => window.open(url, '_blank')}
+                     className="aspect-square bg-slate-100 rounded-lg flex items-center justify-center text-slate-300 cursor-pointer overflow-hidden group"
+                   >
+                     <img src={url} className="w-full h-full object-cover group-hover:scale-110 transition-transform" referrerPolicy="no-referrer" />
+                   </div>
+                )) || <div className="text-[10px] text-slate-300 italic">No documentation</div>}
              </div>
           </div>
           <div className="space-y-3">
              <p className="text-[10px] font-black text-slate-400 uppercase">Foto Survey</p>
              <div className="grid grid-cols-3 gap-2">
-                {[1, 2, 3].map(i => <div key={i} className="aspect-square bg-slate-100 rounded-lg flex items-center justify-center text-slate-300"><Eye size={16}/></div>)}
+                {reg.surveyDocs?.survei?.map((url, i) => (
+                   <div 
+                     key={i} 
+                     onClick={() => window.open(url, '_blank')}
+                     className="aspect-square bg-slate-100 rounded-lg flex items-center justify-center text-slate-300 cursor-pointer overflow-hidden group"
+                   >
+                     <img src={url} className="w-full h-full object-cover group-hover:scale-110 transition-transform" referrerPolicy="no-referrer" />
+                   </div>
+                )) || <div className="text-[10px] text-slate-300 italic">No documentation</div>}
              </div>
           </div>
        </div>
        <div className="flex gap-4">
-          <button onClick={handleApprove} className="btn-primary flex-grow">Setujui Survey</button>
+          <button 
+            disabled={loading}
+            onClick={handleApprove} 
+            className="btn-primary flex-grow flex items-center justify-center disabled:opacity-50"
+          >
+            {loading && <Activity className="animate-spin mr-2" size={16} />}
+            Setujui Survey
+          </button>
           <button className="btn-primary bg-red-600 flex-grow">Tolak & Ulangi</button>
        </div>
     </div>
@@ -292,11 +368,23 @@ function SurveyApproval({ reg, onAction }: { reg: KKNRegistration, onAction: () 
 }
 
 function RKLApproval({ reg, onAction }: { reg: KKNRegistration, onAction: () => void }) {
-  const handleApprove = () => {
-    reg.status = 'DEPLOYMENT';
-    if (reg.rkl) reg.rkl.status = 'APPROVED';
-    kknService.updateRegistration(reg);
-    onAction();
+  const [loading, setLoading] = useState(false);
+  const handleApprove = async () => {
+    setLoading(true);
+    try {
+      const updated = {
+        ...reg,
+        status: 'DEPLOYMENT' as KKNStatus,
+        rkl: reg.rkl ? { ...reg.rkl, status: 'APPROVED' as const } : undefined
+      };
+      await kknService.updateRegistration(updated);
+      onAction();
+    } catch (error) {
+       console.error('Error approving RKL:', error);
+       alert('Gagal menyetujui RKL.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -308,20 +396,33 @@ function RKLApproval({ reg, onAction }: { reg: KKNRegistration, onAction: () => 
                 <FileText className="text-primary" />
                 <span className="text-sm font-bold text-slate-700">RKL Individu.pdf</span>
              </div>
-             <button className="text-[10px] font-black text-primary hover:underline">LIHAT</button>
+             <button 
+               onClick={() => reg.rkl?.fileIndividu && window.open(reg.rkl.fileIndividu, '_blank')}
+               className="text-[10px] font-black text-primary hover:underline"
+             >LIHAT</button>
           </div>
           <div className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
              <div className="flex items-center space-x-3">
                 <FileText className="text-primary" />
                 <span className="text-sm font-bold text-slate-700">RKL Kelompok.pdf</span>
              </div>
-             <button className="text-[10px] font-black text-primary hover:underline">LIHAT</button>
+             <button 
+               onClick={() => reg.rkl?.fileKelompok && window.open(reg.rkl.fileKelompok, '_blank')}
+               className="text-[10px] font-black text-primary hover:underline"
+             >LIHAT</button>
           </div>
        </div>
        <div className="space-y-4">
           <textarea placeholder="Catatan untuk mahasiswa..." className="input-field text-sm h-20" />
           <div className="flex gap-4">
-             <button onClick={handleApprove} className="btn-primary flex-grow py-5">Terima & Lanjut Deployment</button>
+             <button 
+               disabled={loading}
+               onClick={handleApprove} 
+               className="btn-primary flex-grow py-5 flex items-center justify-center disabled:opacity-50"
+             >
+               {loading && <Activity className="animate-spin mr-2" size={16} />}
+               Terima & Lanjut Deployment
+             </button>
              <button className="btn-primary bg-red-500 flex-grow py-5">Tolak RKL</button>
           </div>
        </div>
@@ -330,10 +431,14 @@ function RKLApproval({ reg, onAction }: { reg: KKNRegistration, onAction: () => 
 }
 
 function DeploymentApproval({ reg, onAction }: { reg: KKNRegistration, onAction: () => void }) {
-  const handleApprove = () => {
-    reg.status = 'LOGBOOK';
-    kknService.updateRegistration(reg);
-    onAction();
+  const handleApprove = async () => {
+    try {
+      const updated = { ...reg, status: 'LOGBOOK' as KKNStatus };
+      await kknService.updateRegistration(updated);
+      onAction();
+    } catch (error) {
+      console.error('Error approving deployment:', error);
+    }
   };
 
   return (
@@ -352,13 +457,17 @@ function DeploymentApproval({ reg, onAction }: { reg: KKNRegistration, onAction:
 function LogbookApproval({ reg, onAction }: { reg: KKNRegistration, onAction: () => void }) {
   const [logbooks, setLogbooks] = useState([...reg.logbooks]);
 
-  const handleAction = (id: string, status: 'APPROVED' | 'REJECTED') => {
-     const index = reg.logbooks.findIndex(l => l.id === id);
-     if (index > -1) {
-        reg.logbooks[index].status = status;
-        kknService.updateRegistration(reg);
-        onAction();
-        setLogbooks([...reg.logbooks]);
+  const handleAction = async (id: string, status: 'APPROVED' | 'REJECTED') => {
+     try {
+       const updatedLogbooks = reg.logbooks.map(l => 
+         l.id === id ? { ...l, status } : l
+       );
+       const updated = { ...reg, logbooks: updatedLogbooks };
+       await kknService.updateRegistration(updated);
+       setLogbooks(updatedLogbooks);
+       onAction();
+     } catch (error) {
+       console.error('Error updating logbook:', error);
      }
   };
 
@@ -373,7 +482,14 @@ function LogbookApproval({ reg, onAction }: { reg: KKNRegistration, onAction: ()
             <div key={log.id} className="card p-6 flex items-center justify-between border-l-4 border-l-primary/30">
                <div className="space-y-1">
                   <div className="text-[10px] font-black text-slate-400 uppercase">{log.date} • {log.hours} Jam</div>
-                  <h5 className="font-bold text-slate-900 italic text-sm">{log.nama}</h5>
+                  <div className="flex items-center space-x-2">
+                    <h5 className="font-bold text-slate-900 italic text-sm">{log.nama}</h5>
+                    {log.photos && log.photos[0] && (
+                      <button onClick={() => window.open(log.photos[0], '_blank')}>
+                         <Eye size={12} className="text-primary opacity-50 hover:opacity-100" />
+                      </button>
+                    )}
+                  </div>
                   <p className="text-[10px] font-medium text-slate-500">Desa: {log.pihakDesa} ({log.statusPihakDesa})</p>
                </div>
                {log.status === 'PENDING' ? (
@@ -397,11 +513,18 @@ function LogbookApproval({ reg, onAction }: { reg: KKNRegistration, onAction: ()
 }
 
 function LPKApproval({ reg, onAction }: { reg: KKNRegistration, onAction: () => void }) {
-  const handleApprove = () => {
-    reg.status = 'GRADING';
-    if (reg.lpk) reg.lpk.status = 'APPROVED';
-    kknService.updateRegistration(reg);
-    onAction();
+  const handleApprove = async () => {
+    try {
+      const updated = {
+        ...reg,
+        status: 'GRADING' as KKNStatus,
+        lpk: reg.lpk ? { ...reg.lpk, status: 'APPROVED' as const } : undefined
+      };
+      await kknService.updateRegistration(updated);
+      onAction();
+    } catch (error) {
+      console.error('Error approving LPK:', error);
+    }
   };
 
   return (
@@ -413,14 +536,20 @@ function LPKApproval({ reg, onAction }: { reg: KKNRegistration, onAction: () => 
                 <FileText className="text-primary" />
                 <p className="font-bold text-slate-800 text-sm">LPK Individu</p>
              </div>
-             <button className="btn-primary w-full py-2.5 text-[10px] bg-slate-900">Review PDF</button>
+             <button 
+               onClick={() => reg.lpk?.fileIndividu && window.open(reg.lpk.fileIndividu, '_blank')}
+               className="btn-primary w-full py-2.5 text-[10px] bg-slate-900"
+             >Review PDF</button>
           </div>
           <div className="card bg-slate-50 border-none space-y-4">
              <div className="flex items-center space-x-4">
                 <FileText className="text-primary" />
                 <p className="font-bold text-slate-800 text-sm">LPK Kelompok</p>
              </div>
-             <button className="btn-primary w-full py-2.5 text-[10px] bg-slate-900">Review PDF</button>
+             <button 
+               onClick={() => reg.lpk?.fileKelompok && window.open(reg.lpk.fileKelompok, '_blank')}
+               className="btn-primary w-full py-2.5 text-[10px] bg-slate-900"
+             >Review PDF</button>
           </div>
        </div>
        <div className="flex gap-4">
@@ -433,12 +562,19 @@ function LPKApproval({ reg, onAction }: { reg: KKNRegistration, onAction: () => 
 function GradingBox({ reg, onAction }: { reg: KKNRegistration, onAction: () => void }) {
   const [scores, setScores] = useState({ rkl: 90, kinerja: 85, lpk: 88, responsi: 80 });
 
-  const handleFinish = () => {
-    const { total, gradeText } = kknService.calculateFinalGrade(scores.rkl, scores.kinerja, scores.lpk, scores.responsi);
-    reg.grades = { ...scores, total, gradeText };
-    reg.status = 'COMPLETED';
-    kknService.updateRegistration(reg);
-    onAction();
+  const handleFinish = async () => {
+    try {
+      const { total, gradeText } = kknService.calculateFinalGrade(scores.rkl, scores.kinerja, scores.lpk, scores.responsi);
+      const updated = {
+        ...reg,
+        status: 'COMPLETED' as KKNStatus,
+        grades: { ...scores, total, gradeText }
+      };
+      await kknService.updateRegistration(updated);
+      onAction();
+    } catch (error) {
+      console.error('Error finishing grading:', error);
+    }
   };
 
   return (

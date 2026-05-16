@@ -31,25 +31,25 @@ export default function App() {
               <Route 
                 path="/dashboard/mahasiswa/*" 
                 element={
-                  localStorage.getItem('user_role') === 'MAHASISWA' 
+                  localStorage.getItem('user_role')?.toUpperCase() === 'MAHASISWA' 
                     ? <MahasiswaDashboard /> 
-                    : <Navigate to="/dashboard/dosen" replace />
+                    : <Navigate to="/login" replace />
                 } 
               />
               <Route 
                 path="/dashboard/dosen/*" 
                 element={
-                  localStorage.getItem('user_role') === 'DOSEN' 
+                  localStorage.getItem('user_role')?.toUpperCase() === 'DOSEN' 
                     ? <DosenDashboard /> 
-                    : <Navigate to="/dashboard/mahasiswa" replace />
+                    : <Navigate to="/login" replace />
                 } 
               />
               <Route 
                 path="/dashboard/admin/*" 
                 element={
-                  localStorage.getItem('user_role') === 'ADMIN' 
+                  localStorage.getItem('user_role')?.toUpperCase() === 'ADMIN' 
                     ? <AdminDashboard /> 
-                    : <Navigate to="/" replace />
+                    : <Navigate to="/login" replace />
                 } 
               />
               

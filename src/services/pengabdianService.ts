@@ -37,7 +37,9 @@ export const pengabdianService = {
     return (data || []).map(r => ({
       ...r,
       dosenId: r.dosen_id,
-      dosenName: r.profiles?.full_name || 'Dosen'
+      dosenName: r.profiles?.full_name || 'Dosen',
+      logbooks: r.logbooks || [],
+      totalHours: r.totalHours || 0
     }));
   },
 
@@ -56,21 +58,35 @@ export const pengabdianService = {
     return {
       ...data,
       dosenId: data.dosen_id,
-      dosenName: data.profiles?.full_name || 'Dosen'
+      dosenName: data.profiles?.full_name || 'Dosen',
+      logbooks: data.logbooks || [],
+      totalHours: data.totalHours || 0
     };
   },
 
   saveRegistration: async (reg: PengabdianRegistration) => {
-    const { id, dosenId, dosenName, ...rest } = reg;
+    const dbPayload: any = {
+      dosen_id: reg.dosenId,
+      status: reg.status,
+      rejectionReason: reg.rejectionReason,
+      docs: reg.docs,
+      info: reg.info,
+      totalHours: reg.totalHours,
+      logbooks: reg.logbooks,
+      updated_at: new Date().toISOString()
+    };
+
+    if (reg.id && reg.id.length > 20) {
+      dbPayload.id = reg.id;
+    }
+
     const { error } = await supabase
       .from('pengabdian_registrations')
-      .upsert({ 
-        id, 
-        ...rest, 
-        dosen_id: dosenId,
-        updated_at: new Date().toISOString()
-      });
+      .upsert(dbPayload);
 
-    if (error) throw error;
-  }
+    if (error) {
+      console.error('Pengabdian Upsert Error:', error);
+      throw error;
+    }
+  },
 };
