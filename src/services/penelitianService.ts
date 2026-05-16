@@ -1,4 +1,5 @@
 
+import { supabase } from '@/src/lib/supabase';
 import { AcademicStatus } from './semproService';
 
 export interface PenelitianRegistration {
@@ -8,54 +9,14 @@ export interface PenelitianRegistration {
   status: AcademicStatus;
   rejectionReason?: string;
   proposalFile?: string;
-
-  // Sempro Info (assigned by Admin)
-  semproInfo?: {
-    lokasi: string;
-    tanggal: string;
-    pukul: string;
-    catatan?: string;
-  };
-
-  // Proof of Sempro
-  semproProof?: {
-    photos: string[]; // min 3
-    note: string; // min 1
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  };
-
-  // Research Phase (Logbook)
+  semproInfo?: any;
+  semproProof?: any;
   logbooks: PenelitianLogbook[];
-
-  // Results
   resultFile?: string;
-
-  // Final Seminar Info
-  finalSemproInfo?: {
-    tanggal: string;
-    pukul: string;
-    lokasi: string;
-    panelis: string;
-    peserta: string;
-    catatan?: string;
-  };
-
-  // Final Seminar Proof
-  finalSemproProof?: {
-    photos: string[]; // min 3
-    note: string; // min 1
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  };
-
-  // Final Revision
+  finalSemproInfo?: any;
+  finalSemproProof?: any;
   finalRevisionFile?: string;
-  
-  // Publication Option
-  publication?: {
-    method: 'MANDIRI' | 'PPPM';
-    type?: 'JURNAL' | 'BUKU' | 'PROSIDING' | 'LAIN';
-    otherType?: string;
-  };
+  publication?: any;
 }
 
 export interface PenelitianLogbook {
@@ -81,34 +42,82 @@ export interface DosenDokumentasi {
   fileUrl: string;
 }
 
-const STORAGE_KEY_PENELITIAN = 'dosen_penelitian';
-const STORAGE_KEY_DOKUMENTASI = 'dosen_dokumentasi';
-
 export const penelitianService = {
-  getRegistrations: (): PenelitianRegistration[] => {
-    const data = localStorage.getItem(STORAGE_KEY_PENELITIAN);
-    return data ? JSON.parse(data) : [];
+  getRegistrations: async (): Promise<PenelitianRegistration[]> => {
+    const { data, error } = await supabase
+      .from('penelitian_registrations')
+      .select('*, profiles(full_name)');
+    
+    if (error) {
+      console.error('Error fetching penelitian registrations:', error);
+      return [];
+    }
+
+    return (data || []).map(r => ({
+      ...r,
+      dosenId: r.dosen_id,
+      dosenName: r.profiles?.full_name || 'Dosen',
+      logbooks: []
+    }));
   },
-  getRegistrationByDosen: (dosenId: string): PenelitianRegistration | null => {
-    const regs = penelitianService.getRegistrations();
-    return regs.find(r => r.dosenId === dosenId) || null;
+
+  getRegistrationByDosen: async (dosenId: string): Promise<PenelitianRegistration | null> => {
+    const { data, error } = await supabase
+      .from('penelitian_registrations')
+      .select('*, profiles(full_name)')
+      .eq('dosen_id', dosenId)
+      .single();
+    
+    if (error) {
+      if (error.code !== 'PGRST116') console.error('Error fetching penelitian registration:', error);
+      return null;
+    }
+
+    return {
+      ...data,
+      dosenId: data.dosen_id,
+      dosenName: data.profiles?.full_name || 'Dosen',
+      logbooks: []
+    };
   },
-  saveRegistration: (reg: PenelitianRegistration) => {
-    const regs = penelitianService.getRegistrations();
-    const index = regs.findIndex(r => r.id === reg.id);
-    if (index > -1) regs[index] = reg;
-    else regs.push(reg);
-    localStorage.setItem(STORAGE_KEY_PENELITIAN, JSON.stringify(regs));
+
+  saveRegistration: async (reg: PenelitianRegistration) => {
+    const { id, dosenId, dosenName, ...rest } = reg;
+    const { error } = await supabase
+      .from('penelitian_registrations')
+      .upsert({ 
+        id, 
+        ...rest, 
+        dosen_id: dosenId,
+        updated_at: new Date().toISOString()
+      });
+
+    if (error) throw error;
   },
   
-  getDokumentasi: (dosenId?: string): DosenDokumentasi[] => {
-    const data = localStorage.getItem(STORAGE_KEY_DOKUMENTASI);
-    const all = data ? JSON.parse(data) : [];
-    return dosenId ? all.filter((d: any) => d.dosenId === dosenId) : all;
+  getDokumentasi: async (dosenId?: string): Promise<DosenDokumentasi[]> => {
+    let query = supabase.from('dosen_dokumentasi').select('*');
+    if (dosenId) query = query.eq('dosen_id', dosenId);
+    
+    const { data, error } = await query;
+    if (error) {
+      console.error('Error fetching dokumentasi:', error);
+      return [];
+    }
+    return (data || []).map(d => ({
+      ...d,
+      dosenId: d.dosen_id
+    }));
   },
-  saveDokumentasi: (doc: DosenDokumentasi) => {
-    const all = penelitianService.getDokumentasi();
-    all.push(doc);
-    localStorage.setItem(STORAGE_KEY_DOKUMENTASI, JSON.stringify(all));
+
+  saveDokumentasi: async (doc: DosenDokumentasi) => {
+    const { dosenId, ...rest } = doc;
+    const { error } = await supabase
+      .from('dosen_dokumentasi')
+      .insert({ 
+        ...rest, 
+        dosen_id: dosenId 
+      });
+    if (error) throw error;
   }
 };

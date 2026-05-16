@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { motion } from 'motion/react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn, AlertCircle, ArrowRight } from 'lucide-react';
+import { supabase } from '@/src/lib/supabase';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -15,22 +16,43 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    // Mock login logic for UI
-    setTimeout(() => {
-      let userRole = 'MAHASISWA';
-      if (email === 'admin@staiiu.ac.id' || email === 'maghfurmunif@gmail.com') {
-        userRole = 'ADMIN';
-        navigate('/dashboard/admin');
-      } else if (email.includes('dosen')) {
-        userRole = 'DOSEN';
-        navigate('/dashboard/dosen');
-      } else {
-        navigate('/dashboard/mahasiswa');
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('No user found');
+
+      // Fetch Profile for Role
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        // Fallback or handle missing profile
       }
+
+      const userRole = profile?.role || 'MAHASISWA';
+      const userId = authData.user.id;
+      const userName = profile?.full_name || 'User Portal';
+
       localStorage.setItem('user_role', userRole);
+      localStorage.setItem('user_id', userId);
+      localStorage.setItem('user_name', userName);
+      
+      navigate(`/dashboard/${userRole.toLowerCase()}`);
+      window.location.reload(); 
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err.message || 'Login gagal. Periksa kembali email dan password.');
+    } finally {
       setLoading(false);
-      window.location.reload(); // Ensure Navbar updates
-    }, 1000);
+    }
   };
 
   return (

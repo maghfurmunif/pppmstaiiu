@@ -15,16 +15,17 @@ export default function AdminPengabdian() {
   const [search, setSearch] = useState('');
   const [selectedReg, setSelectedReg] = useState<PengabdianRegistration | null>(null);
 
-  useEffect(() => {
-    setRegistrations(pengabdianService.getRegistrations());
-  }, []);
-
-  const refreshData = () => {
-    setRegistrations(pengabdianService.getRegistrations());
+  const refreshData = async () => {
+    const data = await pengabdianService.getRegistrations();
+    setRegistrations(data);
     if (selectedReg) {
-      setSelectedReg(pengabdianService.getRegistrations().find(r => r.id === selectedReg.id) || null);
+      setSelectedReg(data.find(r => r.id === selectedReg.id) || null);
     }
   };
+
+  useEffect(() => {
+    refreshData();
+  }, []);
 
   const filtered = registrations.filter(r => {
     const matchSearch = r.dosenName.toLowerCase().includes(search.toLowerCase());
@@ -134,16 +135,19 @@ export default function AdminPengabdian() {
 }
 
 function PengabdianApproval({ reg, onAction }: { reg: PengabdianRegistration, onAction: () => void }) {
-  const handleApprove = () => {
-    reg.status = 'LOGBOOK';
-    reg.info = {
-      lokasi: 'Kec. Dukun, Gresik',
-      kelompok: 'Dosen-01',
-      tglSosialisasi: '2024-06-01',
-      tglBerangkat: '2024-06-02',
-      tglPulang: '2024-06-30'
+  const handleApprove = async () => {
+    const updated = {
+      ...reg,
+      status: 'LOGBOOK' as any,
+      info: {
+        lokasi: 'Kec. Dukun, Gresik',
+        kelompok: 'Dosen-01',
+        tglSosialisasi: '2024-06-01',
+        tglBerangkat: '2024-06-02',
+        tglPulang: '2024-06-30'
+      }
     };
-    pengabdianService.saveRegistration(reg);
+    await pengabdianService.saveRegistration(updated);
     onAction();
   };
 

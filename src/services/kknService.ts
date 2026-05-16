@@ -1,4 +1,6 @@
 
+import { supabase } from '@/src/lib/supabase';
+
 export type KKNStatus = 'ENROLL' | 'PENDING' | 'SUBMITTED' | 'REJECTED' | 'APPROVED' | 'SURVEY' | 'SURVEY_PENDING' | 'RKL' | 'RKL_PENDING' | 'DEPLOYMENT' | 'DEPLOYMENT_PENDING' | 'LOGBOOK' | 'LPK' | 'LPK_PENDING' | 'GRADING' | 'COMPLETED';
 
 export interface KKNRegistration {
@@ -8,73 +10,15 @@ export interface KKNRegistration {
   type: 'REGULER' | 'MANDIRI';
   status: KKNStatus;
   rejectionReason?: string;
-  
-  // Phase 1: Registration Docs
-  docs: {
-    transkrip: boolean;
-    pembayaran: boolean;
-    krs: boolean;
-    kesehatan: boolean;
-    foto: boolean;
-    pernyataan: boolean;
-    izinOrtu: boolean;
-  };
-  
-  // Phase 2: Info (assigned by Admin)
-  info?: {
-    lokasi: string;
-    tglBerangkat: string;
-    tglPulang: string;
-    dpl: string;
-    kelompok: string;
-    tglSosialisasi: string;
-    lokasiSosialisasi: string;
-    catatan?: string;
-  };
-  
-  // Phase 2: Student Survey Docs
-  surveyDocs?: {
-    sosialisasi: string[]; // URLs or Base64 (simulated)
-    survei: string[]; // URLs or Base64 (simulated)
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
-    catatan?: string;
-  };
-  
-  // Phase 3: RKL
-  rkl?: {
-    fileIndividu: string;
-    fileKelompok: string;
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
-    catatan?: string;
-  };
-
-  // Phase 4: Deployment
-  deployment?: {
-    foto: string[];
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  };
-
-  // Phase 5: Logbook
+  docs: any;
+  info?: any;
+  surveyDocs?: any;
+  rkl?: any;
+  deployment?: any;
   logbooks: KKNLogbook[];
   totalHours: number;
-
-  // Phase 6: LPK
-  lpk?: {
-    fileIndividu: string;
-    fileKelompok: string;
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
-    catatan?: string;
-  };
-
-  // Phase 7: Grading
-  grades?: {
-    rkl: number; // 5%
-    kinerja: number; // 70%
-    lpk: number; // 15%
-    responsi: number; // 10%
-    total: number;
-    gradeText: string; // A, B, etc.
-  };
+  lpk?: any;
+  grades?: any;
 }
 
 export interface KKNLogbook {
@@ -94,33 +38,65 @@ export interface KKNLogbook {
   catatan?: string;
 }
 
-const STORAGE_KEY = 'kkn_registrations_v2';
-
 export const kknService = {
-  getRegistrations: (): KKNRegistration[] => {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  },
-
-  getRegistrationByStudent: (studentId: string, type: 'REGULER' | 'MANDIRI'): KKNRegistration | null => {
-    const regs = kknService.getRegistrations();
-    // Special case for demo: if no studentId is provided (anon dashboard), we check if any exists for that type
-    return regs.find(r => r.studentId === (studentId || 'current_user') && r.type === type) || null;
-  },
-
-  saveRegistration: (reg: KKNRegistration) => {
-    const regs = kknService.getRegistrations();
-    const index = regs.findIndex(r => r.id === reg.id);
-    if (index > -1) {
-      regs[index] = reg;
-    } else {
-      regs.push(reg);
+  getRegistrations: async (): Promise<KKNRegistration[]> => {
+    const { data, error } = await supabase
+      .from('kkn_registrations')
+      .select('*, profiles(full_name)');
+    
+    if (error) {
+      console.error('Error fetching registrations:', error);
+      return [];
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(regs));
+
+    return (data || []).map(r => ({
+      ...r,
+      studentId: r.student_id,
+      studentName: r.profiles?.full_name || 'Student',
+      logbooks: [], // Logbooks usually fetched separately or joined
+      totalHours: 0
+    }));
   },
 
-  updateRegistration: (reg: KKNRegistration) => {
-    kknService.saveRegistration(reg);
+  getRegistrationByStudent: async (studentId: string, type: 'REGULER' | 'MANDIRI'): Promise<KKNRegistration | null> => {
+    const { data, error } = await supabase
+      .from('kkn_registrations')
+      .select('*, profiles(full_name)')
+      .eq('student_id', studentId)
+      .eq('type', type)
+      .single();
+    
+    if (error) {
+      if (error.code !== 'PGRST116') console.error('Error fetching registration:', error);
+      return null;
+    }
+
+    return {
+      ...data,
+      studentId: data.student_id,
+      studentName: data.profiles?.full_name || 'Student',
+      logbooks: [], 
+      totalHours: 0
+    };
+  },
+
+  saveRegistration: async (reg: KKNRegistration) => {
+    const { id, studentId, studentName, ...rest } = reg;
+    const dbPayload = {
+      ...rest,
+      student_id: studentId,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase
+      .from('kkn_registrations')
+      .upsert({ id, ...dbPayload });
+
+    if (error) throw error;
+  },
+
+  updateRegistration: async (reg: KKNRegistration) => {
+    await kknService.saveRegistration(reg);
   },
 
   calculateHours: (startTime: string, endTime: string): number => {

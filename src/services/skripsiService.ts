@@ -1,4 +1,5 @@
 
+import { supabase } from '@/src/lib/supabase';
 import { AcademicStatus } from './semproService';
 
 export interface SkripsiRegistration {
@@ -7,56 +8,13 @@ export interface SkripsiRegistration {
   studentName: string;
   status: AcademicStatus;
   rejectionReason?: string;
-
-  // Phase 1: Registration
-  registrationDocs?: {
-    sks: boolean;
-    ipk: boolean;
-    nilaiMataKuliah: boolean;
-    administrasi: boolean;
-  };
-
-  // Admin assigns
-  advisor?: {
-    name: string;
-    info?: string;
-  };
-
-  // Phase 2: Bimbingan (Logbook)
+  registrationDocs?: any;
+  advisor?: any;
   logbooks: SkripsiLogbook[];
-  
-  // Phase 3: Final Submission
-  finalDocs?: {
-    persetujuan: boolean;
-    transkripKrs: boolean;
-    bebasTanggungan: boolean;
-    sertifikat: boolean;
-    buktiBimbingan: boolean;
-  };
-
-  // Exam Info
-  examSchedule?: {
-    tanggal: string;
-    hari: string;
-    ruang: string;
-    pukul: string;
-    catatan?: string;
-  };
-
-  // Progress Docs (after exam)
-  afterExamDocs?: {
-    photos: string[]; // max 3
-    revisions: string[]; // max 3
-    finalRevisionFile?: string;
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  };
-
-  grades?: {
-    naskah: number;  // 30%
-    sidang: number;  // 70%
-    total: number;
-    gradeText: string;
-  };
+  finalDocs?: any;
+  examSchedule?: any;
+  afterExamDocs?: any;
+  grades?: any;
 }
 
 export interface SkripsiLogbook {
@@ -68,24 +26,59 @@ export interface SkripsiLogbook {
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
 }
 
-const STORAGE_KEY_SKRIPSI = 'skripsi_registrations';
-
 export const skripsiService = {
-  getRegistrations: (): SkripsiRegistration[] => {
-    const data = localStorage.getItem(STORAGE_KEY_SKRIPSI);
-    return data ? JSON.parse(data) : [];
+  getRegistrations: async (): Promise<SkripsiRegistration[]> => {
+    const { data, error } = await supabase
+      .from('skripsi_registrations')
+      .select('*, profiles(full_name)');
+    
+    if (error) {
+      console.error('Error fetching skripsi registrations:', error);
+      return [];
+    }
+
+    return (data || []).map(r => ({
+      ...r,
+      studentId: r.student_id,
+      studentName: r.profiles?.full_name || 'Student',
+      logbooks: []
+    }));
   },
-  getRegistrationByStudent: (studentId: string): SkripsiRegistration | null => {
-    const regs = skripsiService.getRegistrations();
-    return regs.find(r => r.studentId === studentId) || null;
+
+  getRegistrationByStudent: async (studentId: string): Promise<SkripsiRegistration | null> => {
+    const { data, error } = await supabase
+      .from('skripsi_registrations')
+      .select('*, profiles(full_name)')
+      .eq('student_id', studentId)
+      .single();
+    
+    if (error) {
+      if (error.code !== 'PGRST116') console.error('Error fetching skripsi registration:', error);
+      return null;
+    }
+
+    return {
+      ...data,
+      studentId: data.student_id,
+      studentName: data.profiles?.full_name || 'Student',
+      logbooks: []
+    };
   },
-  saveRegistration: (reg: SkripsiRegistration) => {
-    const regs = skripsiService.getRegistrations();
-    const index = regs.findIndex(r => r.id === reg.id);
-    if (index > -1) regs[index] = reg;
-    else regs.push(reg);
-    localStorage.setItem(STORAGE_KEY_SKRIPSI, JSON.stringify(regs));
+
+  saveRegistration: async (reg: SkripsiRegistration) => {
+    const { id, studentId, studentName, ...rest } = reg;
+    const { error } = await supabase
+      .from('skripsi_registrations')
+      .upsert({ 
+        id, 
+        ...rest, 
+        student_id: studentId,
+        updated_at: new Date().toISOString()
+      });
+
+    if (error) throw error;
   },
+
   calculateFinalGrade: (naskah: number, sidang: number) => {
     const total = (naskah * 0.3) + (sidang * 0.7);
     let gradeText = 'E';

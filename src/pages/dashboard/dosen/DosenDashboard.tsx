@@ -17,7 +17,9 @@ const PengabdianDosen = lazy(() => import('./sections/PengabdianDosen'));
 const DosenDokumentasi = lazy(() => import('./sections/DosenDokumentasi'));
 
 export default function DosenDashboard() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const menus = [
     { id: 'overview', name: 'Dashboard', path: '/dashboard/dosen', icon: LayoutDashboard },
     { id: 'penelitian', name: 'Penelitian', path: '/dashboard/dosen/penelitian', icon: FlaskConical },
@@ -28,7 +30,66 @@ export default function DosenDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex text-slate-900">
+    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row text-slate-900">
+      {/* Mobile Header */}
+      <div className="lg:hidden h-20 bg-white border-b border-slate-100 flex items-center justify-between px-6 sticky top-0 z-50">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold italic">STAI</div>
+          <span className="font-black text-xs uppercase tracking-widest italic text-slate-900">Dosen Portal</span>
+        </div>
+        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 bg-slate-50 rounded-xl text-slate-900">
+          {isMobileMenuOpen ? <Bell className="rotate-90" /> : <Layers />}
+        </button>
+      </div>
+
+      {/* Mobile Drawer */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div 
+            initial={{ x: '-100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '-100%' }}
+            className="fixed inset-0 z-40 lg:hidden bg-slate-900 p-6 flex flex-col space-y-4"
+          >
+             <div className="flex justify-between items-center mb-10">
+                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold italic">STAI</div>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="text-white ring-1 ring-white/20 p-2 rounded-xl">Tutup</button>
+             </div>
+             <div className="flex-grow space-y-2 overflow-y-auto pr-2">
+                {menus.map(menu => (
+                  menu.external ? (
+                    <a key={menu.id} href={menu.path} target="_blank" rel="noreferrer" className="flex items-center space-x-4 p-4 rounded-2xl transition-all font-bold text-xs uppercase tracking-[0.2em] text-white/40 hover:text-white">
+                      <menu.icon size={18} />
+                      <span>{menu.name}</span>
+                    </a>
+                  ) : (
+                    <Link 
+                      key={menu.id} 
+                      to={menu.path} 
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={cn(
+                        "flex items-center space-x-4 p-4 rounded-2xl transition-all font-bold text-xs uppercase tracking-[0.2em]",
+                        location.pathname === menu.path ? "bg-primary text-white shadow-xl" : "text-white/40 hover:text-white"
+                      )}
+                    >
+                      <menu.icon size={18} />
+                      <span>{menu.name}</span>
+                    </Link>
+                  )
+                ))}
+             </div>
+             <button 
+                onClick={() => {
+                  localStorage.clear();
+                  window.location.href = '/';
+                }}
+                className="w-full py-5 bg-red-600/20 text-red-500 rounded-2xl font-black text-xs uppercase tracking-widest"
+              >
+                Logout Sesi
+             </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Sidebar */}
       <aside className="w-72 hidden lg:flex flex-col sticky top-20 h-[calc(100vh-80px)] p-6 z-20">
         <div className="glass-morphism h-full rounded-[32px] p-4 flex flex-col shadow-xl border-white/40">

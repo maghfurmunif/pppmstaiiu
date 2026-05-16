@@ -9,34 +9,83 @@ import {
 import { cn } from '@/src/lib/utils';
 import { semproService, SemproRegistration, AcademicStatus } from '@/src/services/semproService';
 
+import { uploadToCloudinary } from '@/src/lib/cloudinary';
+
 const TEMPLATE_URL = "https://drive.google.com/file/d/1UjFVYzulNNA8aWHIPNhI26o2ZIbkzoNC/view?usp=sharing";
 
 export default function SemproSection() {
   const [registration, setRegistration] = useState<SemproRegistration | null>(null);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [docs, setDocs] = useState({ proposal: '' });
+  const [postDocs, setPostDocs] = useState({ dokumentasi: [] as string[], catatan: [] as string[] });
+  const [uploadingPost, setUploadingPost] = useState<string | null>(null);
 
-  const studentId = 'current_user';
+  const userId = localStorage.getItem('user_id');
 
   useEffect(() => {
-    setRegistration(semproService.getRegistrationByStudent(studentId));
-    setLoading(false);
-  }, []);
+    const fetchData = async () => {
+      if (!userId) return;
+      const data = await semproService.getRegistrationByStudent(userId);
+      setRegistration(data);
+      setLoading(false);
+    };
+    fetchData();
+  }, [userId]);
 
-  const handleEnroll = () => {
+  const handleFileUpload = async (file: File) => {
+    try {
+      setUploading(true);
+      const url = await uploadToCloudinary(file);
+      setDocs({ proposal: url });
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleEnroll = async () => {
+    if (!userId || !docs.proposal) return;
     const newReg: SemproRegistration = {
       id: Math.random().toString(36).substr(2, 9),
-      studentId: 'current_user',
-      studentName: localStorage.getItem('user_name') || 'Ahmad Maghfur',
-      status: 'ENROLL'
+      studentId: userId,
+      studentName: localStorage.getItem('user_name') || 'Student',
+      status: 'PENDING',
+      fileProposal: docs.proposal
     };
-    semproService.saveRegistration(newReg);
+    await semproService.saveRegistration(newReg);
     setRegistration(newReg);
   };
 
-  const updateRegistration = (updates: Partial<SemproRegistration>) => {
+  const handlePostUpload = async (type: 'dok' | 'cat', file: File) => {
+    try {
+      setUploadingPost(type);
+      const url = await uploadToCloudinary(file);
+      if (type === 'dok') setPostDocs(prev => ({ ...prev, dokumentasi: [...prev.dokumentasi, url].slice(0, 3) }));
+      else setPostDocs(prev => ({ ...prev, catatan: [...prev.catatan, url].slice(0, 3) }));
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploadingPost(null);
+    }
+  };
+
+  const handleFinishSempro = async () => {
+    if (postDocs.dokumentasi.length < 3) return;
+    await updateRegistration({ 
+      status: 'PROGRESS',
+      postSeminar: {
+        dokumentasi: postDocs.dokumentasi,
+        catatan: postDocs.catatan
+      }
+    });
+  };
+
+  const updateRegistration = async (updates: Partial<SemproRegistration>) => {
     if (!registration) return;
     const updated = { ...registration, ...updates };
-    semproService.saveRegistration(updated);
+    await semproService.saveRegistration(updated);
     setRegistration(updated);
   };
 
@@ -85,21 +134,25 @@ export default function SemproSection() {
                  </a>
               </div>
            </div>
-           <div className="card p-12 text-center flex flex-col items-center justify-center space-y-8 border-dashed border-2 border-slate-200 bg-white/50">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-                 <FileUp size={40} />
-              </div>
-              <div className="space-y-2">
-                 <h4 className="text-xl font-bold text-slate-900 italic">Siap Kirim Proposal?</h4>
-                 <p className="text-sm text-slate-400 font-medium">Klik tombol di bawah untuk membuka form pengajuan proposal.</p>
-              </div>
-              <button 
-                 onClick={handleEnroll}
-                 className="btn-primary w-full py-5 text-[10px] font-black tracking-widest uppercase shadow-xl"
-              >
-                 Mulai Pendaftaran Sempro
-              </button>
-           </div>
+            <div className="card p-12 text-center flex flex-col items-center justify-center space-y-8 border-dashed border-2 border-slate-200 bg-white/50">
+               <label className={cn("w-20 h-20 rounded-full flex items-center justify-center transition-all cursor-pointer", docs.proposal ? "bg-primary text-white" : "bg-primary/10 text-primary")}>
+                  <input type="file" className="hidden" onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0])} disabled={uploading} />
+                  {uploading ? <Loader2 className="animate-spin" size={40} /> : docs.proposal ? <CheckCircle2 size={40} /> : <FileUp size={40} />}
+               </label>
+               <div className="space-y-2">
+                  <h4 className="text-xl font-bold text-slate-900 italic">{docs.proposal ? 'Proposal Siap Dikirim' : 'Siap Kirim Proposal?'}</h4>
+                  <p className="text-sm text-slate-400 font-medium">
+                     {docs.proposal ? 'File PDF telah terunggah. Silakan klik tombol di bawah.' : 'Klik icon di atas untuk mengunggah proposal Anda.'}
+                  </p>
+               </div>
+               <button 
+                  onClick={handleEnroll}
+                  disabled={!docs.proposal || uploading}
+                  className="btn-primary w-full py-5 text-[10px] font-black tracking-widest uppercase shadow-xl disabled:opacity-20"
+               >
+                  {uploading ? 'Menunggu Unggahan...' : 'Ajukan Seminar Proposal'}
+               </button>
+            </div>
         </div>
       ) : (
         <AnimatePresence mode="wait">
@@ -130,54 +183,61 @@ export default function SemproSection() {
               </div>
            )}
 
-           {registration.status === 'SCHEDULED' && registration.schedule && (
-              <div className="space-y-10">
-                 <div className="card bg-slate-900 text-white p-10 overflow-hidden relative">
-                    <div className="relative z-10 grid md:grid-cols-4 gap-10">
-                       <div className="md:col-span-2 space-y-4">
-                          <h3 className="text-3xl font-black italic underline decoration-primary underline-offset-8">Jadwal Seminar</h3>
-                          <p className="text-slate-400 text-sm font-medium">Pastikan Anda hadir 15 menit sebelum waktu yang ditentukan dengan membawa naskah cetak.</p>
-                       </div>
-                       <div className="grid grid-cols-2 gap-6 md:col-span-2">
-                          <div>
-                             <p className="text-[10px] font-black text-primary uppercase tracking-widest">Tanggal & Waktu</p>
-                             <p className="text-lg font-bold">{registration.schedule.tanggal}</p>
-                             <p className="text-xs text-slate-400">{registration.schedule.hari}, {registration.schedule.pukul} WIB</p>
-                          </div>
-                          <div>
-                             <p className="text-[10px] font-black text-primary uppercase tracking-widest">Ruangan & Sifat</p>
-                             <p className="text-lg font-bold">{registration.schedule.ruang}</p>
-                             <p className="text-xs text-slate-400">Sifat: {registration.schedule.sifat}</p>
-                          </div>
-                       </div>
-                    </div>
-                    <BookOpen size={200} className="absolute -right-20 -bottom-20 text-white/5" />
-                 </div>
-                 
-                 <div className="max-w-2xl mx-auto space-y-8">
-                    <div className="text-center">
-                       <h4 className="text-lg font-bold text-slate-900 italic">Selesaikan Berkas Pasca-Seminar</h4>
-                       <p className="text-sm text-slate-400">Upload dokumentasi dan catatan perbaikan untuk mendapatkan nilai akhir.</p>
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-4">
-                       <div className="card p-6 border-dashed flex flex-col items-center justify-center space-y-3 cursor-pointer hover:bg-slate-50 transition-all">
-                          <Camera className="text-slate-300" />
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dokumentasi (Min 3)</span>
-                       </div>
-                       <div className="card p-6 border-dashed flex flex-col items-center justify-center space-y-3 cursor-pointer hover:bg-slate-50 transition-all">
-                          <FileText className="text-slate-300" />
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Catatan (Max 3)</span>
-                       </div>
-                    </div>
-                    <button 
-                       onClick={() => updateRegistration({ status: 'PROGRESS' })}
-                       className="w-full py-5 btn-primary shadow-2xl"
-                    >
-                       Simpan Dokumentasi Seminar
-                    </button>
-                 </div>
-              </div>
-           )}
+            {registration.status === 'SCHEDULED' && registration.schedule && (
+               <div className="space-y-10">
+                  <div className="card bg-slate-900 text-white p-10 overflow-hidden relative">
+                     <div className="relative z-10 grid md:grid-cols-4 gap-10">
+                        <div className="md:col-span-2 space-y-4">
+                           <h3 className="text-3xl font-black italic underline decoration-primary underline-offset-8">Jadwal Seminar</h3>
+                           <p className="text-slate-400 text-sm font-medium">Pastikan Anda hadir 15 menit sebelum waktu yang ditentukan dengan membawa naskah cetak.</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-6 md:col-span-2">
+                           <div>
+                              <p className="text-[10px] font-black text-primary uppercase tracking-widest">Tanggal & Waktu</p>
+                              <p className="text-lg font-bold">{registration.schedule.tanggal}</p>
+                              <p className="text-xs text-slate-400">{registration.schedule.hari}, {registration.schedule.pukul} WIB</p>
+                           </div>
+                           <div>
+                              <p className="text-[10px] font-black text-primary uppercase tracking-widest">Ruangan & Sifat</p>
+                              <p className="text-lg font-bold">{registration.schedule.ruang}</p>
+                              <p className="text-xs text-slate-400">Sifat: {registration.schedule.sifat}</p>
+                           </div>
+                        </div>
+                     </div>
+                     <BookOpen size={200} className="absolute -right-20 -bottom-20 text-white/5" />
+                  </div>
+                  
+                  <div className="max-w-2xl mx-auto space-y-8">
+                     <div className="text-center">
+                        <h4 className="text-lg font-bold text-slate-900 italic">Selesaikan Berkas Pasca-Seminar</h4>
+                        <p className="text-sm text-slate-400">Upload dokumentasi (min 3) dan catatan perbaikan (max 3) untuk mendapatkan nilai akhir.</p>
+                     </div>
+                     <div className="grid md:grid-cols-2 gap-4">
+                        <label className={cn("card p-6 border-dashed flex flex-col items-center justify-center space-y-3 cursor-pointer hover:bg-slate-50 transition-all text-center", postDocs.dokumentasi.length >= 3 ? "border-primary" : "text-slate-300")}>
+                           <input type="file" className="hidden" onChange={e => e.target.files?.[0] && handlePostUpload('dok', e.target.files[0])} disabled={!!uploadingPost} />
+                           {uploadingPost === 'dok' ? <Loader2 className="animate-spin text-primary" /> : <Camera className={postDocs.dokumentasi.length >= 3 ? "text-primary" : ""} />}
+                           <span className={cn("text-[10px] font-black uppercase tracking-widest", postDocs.dokumentasi.length >= 3 ? "text-primary" : "text-slate-400")}>
+                              {postDocs.dokumentasi.length >= 3 ? 'Dokumentasi Lengkap' : `Dokumentasi (${postDocs.dokumentasi.length}/3)`}
+                           </span>
+                        </label>
+                        <label className={cn("card p-6 border-dashed flex flex-col items-center justify-center space-y-3 cursor-pointer hover:bg-slate-50 transition-all text-center", postDocs.catatan.length > 0 ? "border-primary" : "text-slate-300")}>
+                           <input type="file" className="hidden" onChange={e => e.target.files?.[0] && handlePostUpload('cat', e.target.files[0])} disabled={!!uploadingPost} />
+                           {uploadingPost === 'cat' ? <Loader2 className="animate-spin text-primary" /> : <FileText className={postDocs.catatan.length > 0 ? "text-primary" : ""} />}
+                           <span className={cn("text-[10px] font-black uppercase tracking-widest", postDocs.catatan.length > 0 ? "text-primary" : "text-slate-400")}>
+                              {postDocs.catatan.length > 0 ? `Catatan (${postDocs.catatan.length}/3)` : 'Catatan Perbaikan'}
+                           </span>
+                        </label>
+                     </div>
+                     <button 
+                        onClick={handleFinishSempro}
+                        disabled={postDocs.dokumentasi.length < 3 || !!uploadingPost}
+                        className="w-full py-5 btn-primary shadow-2xl disabled:opacity-20"
+                     >
+                        {uploadingPost ? 'Sedang Mengunggah...' : 'Simpan Dokumentasi Seminar'}
+                     </button>
+                  </div>
+               </div>
+            )}
 
            {registration.status === 'PROGRESS' && (
               <div className="card p-20 text-center space-y-6">

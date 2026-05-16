@@ -13,16 +13,17 @@ export default function AdminPenelitian() {
   const [search, setSearch] = useState('');
   const [selectedReg, setSelectedReg] = useState<PenelitianRegistration | null>(null);
 
-  useEffect(() => {
-    setRegistrations(penelitianService.getRegistrations());
-  }, []);
-
-  const refreshData = () => {
-    setRegistrations(penelitianService.getRegistrations());
+  const refreshData = async () => {
+    const data = await penelitianService.getRegistrations();
+    setRegistrations(data);
     if (selectedReg) {
-      setSelectedReg(penelitianService.getRegistrations().find(r => r.id === selectedReg.id) || null);
+      setSelectedReg(data.find(r => r.id === selectedReg.id) || null);
     }
   };
+
+  useEffect(() => {
+    refreshData();
+  }, []);
 
   const filtered = registrations.filter(r => 
     r.dosenName.toLowerCase().includes(search.toLowerCase())
@@ -127,17 +128,23 @@ function ProposalAction({ reg, onAction }: { reg: PenelitianRegistration, onActi
      catatan: ''
   });
 
-  const handleApprove = () => {
-    reg.status = 'APPROVED';
-    reg.semproInfo = info as any;
-    penelitianService.saveRegistration(reg);
+  const handleApprove = async () => {
+    const updated = {
+      ...reg,
+      status: 'APPROVED' as any,
+      semproInfo: info as any
+    };
+    await penelitianService.saveRegistration(updated);
     onAction();
   };
 
-  const handleReject = () => {
-    reg.status = 'REJECTED';
-    reg.rejectionReason = reason;
-    penelitianService.saveRegistration(reg);
+  const handleReject = async () => {
+    const updated = {
+      ...reg,
+      status: 'REJECTED' as any,
+      rejectionReason: reason
+    };
+    await penelitianService.saveRegistration(updated);
     onAction();
   };
 

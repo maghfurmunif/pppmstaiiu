@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { kknService, KKNRegistration, KKNStatus, KKNLogbook } from '@/src/services/kknService';
+import { uploadToCloudinary } from '@/src/lib/cloudinary';
+import { supabase } from '@/src/lib/supabase';
 
 interface KKNSectionProps {
   type: 'REGULER' | 'MANDIRI';
@@ -16,19 +18,24 @@ export default function KKNSection({ type }: KKNSectionProps) {
   const [registration, setRegistration] = useState<KKNRegistration | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const studentId = 'current_user'; // Mocking current student
+  const userId = localStorage.getItem('user_id');
 
   useEffect(() => {
-    const data = kknService.getRegistrationByStudent(studentId, type);
-    setRegistration(data);
-    setLoading(false);
-  }, [type]);
+    const fetchData = async () => {
+      if (!userId) return;
+      const data = await kknService.getRegistrationByStudent(userId, type);
+      setRegistration(data);
+      setLoading(false);
+    };
+    fetchData();
+  }, [type, userId]);
 
-  const handleEnroll = () => {
+  const handleEnroll = async () => {
+    if (!userId) return;
     const newReg: KKNRegistration = {
       id: Math.random().toString(36).substr(2, 9),
-      studentId: 'current_user',
-      studentName: localStorage.getItem('user_name') || 'Ahmad Maghfur',
+      studentId: userId,
+      studentName: localStorage.getItem('user_name') || 'Student',
       type: type,
       status: 'PENDING',
       docs: {
@@ -38,14 +45,23 @@ export default function KKNSection({ type }: KKNSectionProps) {
       logbooks: [],
       totalHours: 0
     };
-    kknService.saveRegistration(newReg);
+    await kknService.saveRegistration(newReg);
+    try {
+      await supabase.from('logbooks').insert({
+        user_id: userId,
+        activity: `Mendaftar KKN ${type}`,
+        is_approved: true
+      });
+    } catch (e) {
+      console.error('Log activity error:', e);
+    }
     setRegistration(newReg);
   };
 
-  const updateRegistration = (updates: Partial<KKNRegistration>) => {
+  const updateRegistration = async (updates: Partial<KKNRegistration>) => {
     if (!registration) return;
     const updated = { ...registration, ...updates };
-    kknService.updateRegistration(updated);
+    await kknService.updateRegistration(updated);
     setRegistration(updated);
   };
 
@@ -207,6 +223,7 @@ function EnrollStep({ onEnroll }: { onEnroll: () => void }) {
 }
 
 function RegistrationStep({ registration, onUpdate }: { registration: KKNRegistration, onUpdate: (u: any) => void }) {
+  const [uploading, setUploading] = useState<string | null>(null);
   const reqs = [
     { id: 'transkrip', label: 'Transkrip Nilai' },
     { id: 'pembayaran', label: 'Bukti Pembayaran' },
@@ -217,6 +234,19 @@ function RegistrationStep({ registration, onUpdate }: { registration: KKNRegistr
     { id: 'izinOrtu', label: 'Izin Orang Tua' },
   ] as const;
 
+  const handleFileChange = async (docId: string, file: File) => {
+    try {
+      setUploading(docId);
+      const url = await uploadToCloudinary(file);
+      const newDocs = { ...registration.docs, [docId]: url };
+      onUpdate({ docs: newDocs });
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(null);
+    }
+  };
+
   const isComplete = reqs.every(r => registration.docs[r.id]);
 
   return (
@@ -225,21 +255,29 @@ function RegistrationStep({ registration, onUpdate }: { registration: KKNRegistr
         <h3 className="text-lg font-bold text-slate-900 italic ml-1">Unggah Dokumen Wajib</h3>
         <div className="grid gap-3">
           {reqs.map((r) => (
-            <label key={r.id} className="card p-5 flex items-center justify-between group cursor-pointer hover:border-primary transition-all">
-              <input type="checkbox" className="hidden" onChange={(e) => {
-                const newDocs = { ...registration.docs, [r.id]: e.target.checked };
-                onUpdate({ docs: newDocs });
-              }} checked={registration.docs[r.id]} />
+            <label key={r.id} className="card p-5 flex items-center justify-between group cursor-pointer hover:border-primary transition-all relative overflow-hidden">
+              <input 
+                type="file" 
+                className="hidden" 
+                onChange={(e) => e.target.files?.[0] && handleFileChange(r.id, e.target.files[0])} 
+                disabled={!!uploading}
+              />
               <div className="flex items-center space-x-4">
                 <div className={cn(
                   "p-2.5 rounded-xl transition-colors",
                   registration.docs[r.id] ? "bg-primary/10 text-primary" : "bg-slate-50 text-slate-300"
                 )}>
-                  <FileUp size={16} />
+                  {uploading === r.id ? <Loader2 className="animate-spin" size={16} /> : <FileUp size={16} />}
                 </div>
                 <span className="text-sm font-bold text-slate-700">{r.label}</span>
               </div>
-              {registration.docs[r.id] ? <CheckCircle2 className="text-primary" size={18} /> : <div className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Required</div>}
+              {registration.docs[r.id] ? (
+                 <div className="flex items-center space-x-2">
+                    <span className="text-[8px] font-black text-green-500 uppercase tracking-widest">Uploaded</span>
+                    <CheckCircle2 className="text-primary" size={18} />
+                 </div>
+              ) : <div className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Required • Klik untuk upload</div>}
+              {uploading === r.id && <div className="absolute inset-x-0 bottom-0 h-1 bg-primary/20 overflow-hidden"><motion.div initial={{ x: '-100%' }} animate={{ x: '100%' }} transition={{ repeat: Infinity, duration: 1 }} className="h-full bg-primary" /></div>}
             </label>
           ))}
         </div>
@@ -327,8 +365,22 @@ function ApprovedStep({ registration, onUpdate }: { registration: KKNRegistratio
 }
 
 function SurveyStep({ registration, onUpdate }: { registration: KKNRegistration, onUpdate: (u: any) => void }) {
-  const [sosialisasi, setSosialisasi] = useState<string[]>([]);
-  const [survei, setSurvei] = useState<string[]>([]);
+  const [sosialisasi, setSosialisasi] = useState<string[]>(registration.surveyDocs?.sosialisasi || []);
+  const [survei, setSurvei] = useState<string[]>(registration.surveyDocs?.survei || []);
+  const [uploading, setUploading] = useState<string | null>(null);
+
+  const handleUpload = async (type: 'sos' | 'sur', file: File) => {
+    try {
+      setUploading(type);
+      const url = await uploadToCloudinary(file);
+      if (type === 'sos') setSosialisasi(prev => [...prev, url].slice(0, 3));
+      else setSurvei(prev => [...prev, url].slice(0, 3));
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(null);
+    }
+  };
 
   const handleApply = () => {
      onUpdate({ 
@@ -345,20 +397,30 @@ function SurveyStep({ registration, onUpdate }: { registration: KKNRegistration,
              <div>
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Sosialisasi (Maks 3 Foto)</div>
                 <div className="flex gap-2">
-                   {[1, 2, 3].map(i => (
-                     <button key={i} onClick={() => setSosialisasi([...sosialisasi, 'photo'])} className={cn("flex-grow h-20 rounded-xl border-2 border-dashed flex items-center justify-center transition-all", sosialisasi.length >= i ? "bg-primary/10 border-primary text-primary" : "bg-slate-50 border-slate-200 text-slate-300")}>
-                        <Camera size={20} />
-                     </button>
+                   {[0, 1, 2].map(i => (
+                     <label key={i} className={cn("flex-grow h-20 rounded-xl border-2 border-dashed flex items-center justify-center transition-all cursor-pointer overflow-hidden relative", sosialisasi[i] ? "border-primary" : "bg-slate-50 border-slate-200 text-slate-300")}>
+                        <input type="file" className="hidden" onChange={e => e.target.files?.[0] && handleUpload('sos', e.target.files[0])} disabled={!!uploading} />
+                        {sosialisasi[i] ? (
+                           <img src={sosialisasi[i]} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        ) : (
+                           uploading === 'sos' ? <Loader2 className="animate-spin" size={20} /> : <Camera size={20} />
+                        )}
+                     </label>
                    ))}
                 </div>
              </div>
              <div>
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Survey Lokasi (Maks 3 Foto)</div>
                 <div className="flex gap-2">
-                   {[1, 2, 3].map(i => (
-                     <button key={i} onClick={() => setSurvei([...survei, 'photo'])} className={cn("flex-grow h-20 rounded-xl border-2 border-dashed flex items-center justify-center transition-all", survei.length >= i ? "bg-primary/10 border-primary text-primary" : "bg-slate-50 border-slate-200 text-slate-300")}>
-                        <Camera size={20} />
-                     </button>
+                   {[0, 1, 2].map(i => (
+                     <label key={i} className={cn("flex-grow h-20 rounded-xl border-2 border-dashed flex items-center justify-center transition-all cursor-pointer overflow-hidden relative", survei[i] ? "border-primary" : "bg-slate-50 border-slate-200 text-slate-300")}>
+                        <input type="file" className="hidden" onChange={e => e.target.files?.[0] && handleUpload('sur', e.target.files[0])} disabled={!!uploading} />
+                        {survei[i] ? (
+                           <img src={survei[i]} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        ) : (
+                           uploading === 'sur' ? <Loader2 className="animate-spin" size={20} /> : <Camera size={20} />
+                        )}
+                     </label>
                    ))}
                 </div>
              </div>
@@ -378,8 +440,22 @@ function SurveyStep({ registration, onUpdate }: { registration: KKNRegistration,
 }
 
 function RKLStep({ registration, onUpdate }: { registration: KKNRegistration, onUpdate: (u: any) => void }) {
-  const [individu, setIndividu] = useState(false);
-  const [kelompok, setKelompok] = useState(false);
+  const [individu, setIndividu] = useState<string | null>(registration.rkl?.fileIndividu || null);
+  const [kelompok, setKelompok] = useState<string | null>(registration.rkl?.fileKelompok || null);
+  const [uploading, setUploading] = useState<string | null>(null);
+
+  const handleUpload = async (type: 'ind' | 'kel', file: File) => {
+    try {
+      setUploading(type);
+      const url = await uploadToCloudinary(file);
+      if (type === 'ind') setIndividu(url);
+      else setKelompok(url);
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(null);
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -388,49 +464,65 @@ function RKLStep({ registration, onUpdate }: { registration: KKNRegistration, on
           <p className="text-slate-500 font-medium italic">Upload berkas RKL yang telah divalidasi oleh Dosen Pembimbing Lapangan.</p>
        </div>
        <div className="card divide-y divide-slate-100 p-0 overflow-hidden">
-          <div className="p-8 flex justify-between items-center group">
+          <label className="p-8 flex justify-between items-center group cursor-pointer hover:bg-slate-50 transition-all">
+             <input type="file" className="hidden" onChange={e => e.target.files?.[0] && handleUpload('ind', e.target.files[0])} disabled={!!uploading} />
              <div className="flex items-center space-x-4">
                 <div className={cn("p-4 rounded-2xl transition-all", individu ? "bg-primary text-white" : "bg-slate-50 text-slate-300")}>
-                   <FileUp size={24} />
+                   {uploading === 'ind' ? <Loader2 className="animate-spin" size={24} /> : <FileUp size={24} />}
                 </div>
                 <div>
                    <p className="font-bold text-slate-800 tracking-tight">Draf RKL Individu</p>
-                   <p className="text-xs text-slate-400 font-medium">PDF • Maks 5MB</p>
+                   <p className="text-xs text-slate-400 font-medium">{individu ? 'Selesai Terupload' : 'PDF • Maks 5MB'}</p>
                 </div>
              </div>
-             <button onClick={() => setIndividu(true)} className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">Upload</button>
-          </div>
-          <div className="p-8 flex justify-between items-center group">
+             <span className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">{individu ? 'Ganti File' : 'Upload'}</span>
+          </label>
+          <label className="p-8 flex justify-between items-center group cursor-pointer hover:bg-slate-50 transition-all">
+             <input type="file" className="hidden" onChange={e => e.target.files?.[0] && handleUpload('kel', e.target.files[0])} disabled={!!uploading} />
              <div className="flex items-center space-x-4">
                 <div className={cn("p-4 rounded-2xl transition-all", kelompok ? "bg-primary text-white" : "bg-slate-50 text-slate-300")}>
-                   <FileUp size={24} />
+                   {uploading === 'kel' ? <Loader2 className="animate-spin" size={24} /> : <FileUp size={24} />}
                 </div>
                 <div>
                    <p className="font-bold text-slate-800 tracking-tight">Draf RKL Kelompok</p>
-                   <p className="text-xs text-slate-400 font-medium">PDF • Maks 5MB</p>
+                   <p className="text-xs text-slate-400 font-medium">{kelompok ? 'Selesai Terupload' : 'PDF • Maks 5MB'}</p>
                 </div>
              </div>
-             <button onClick={() => setKelompok(true)} className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">Upload</button>
-          </div>
+             <span className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">{kelompok ? 'Ganti File' : 'Upload'}</span>
+          </label>
        </div>
        <button 
-         onClick={() => onUpdate({ status: 'RKL_PENDING', rkl: { fileIndividu: 'path', fileKelompok: 'path', status: 'PENDING' } })} 
+         onClick={() => onUpdate({ status: 'RKL_PENDING', rkl: { fileIndividu: individu, fileKelompok: kelompok, status: 'PENDING' } })} 
          disabled={!individu || !kelompok} 
          className="btn-primary w-full disabled:opacity-20"
        >
-         Kirim Berkas Ke Admin
+         {uploading ? 'Sedang Mengunggah...' : 'Kirim Berkas Ke Admin'}
        </button>
     </div>
   );
 }
 
 function DeploymentStep({ registration, onUpdate }: { registration: KKNRegistration, onUpdate: (u: any) => void }) {
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = async (file: File) => {
+    try {
+      setUploading(true);
+      const url = await uploadToCloudinary(file);
+      onUpdate({ status: 'DEPLOYMENT_PENDING', deploymentPhoto: url });
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="card p-12 text-center space-y-10 border-dashed">
        <div className="relative w-32 h-32 mx-auto">
           <div className="absolute inset-0 bg-primary/10 rounded-[40px] animate-pulse" />
           <div className="relative w-full h-full flex items-center justify-center text-primary">
-             <Camera size={48} />
+             {uploading ? <Loader2 className="animate-spin" size={48} /> : <Camera size={48} />}
           </div>
        </div>
        <div className="space-y-4">
@@ -439,13 +531,17 @@ function DeploymentStep({ registration, onUpdate }: { registration: KKNRegistrat
              Unggah foto Anda saat mengikuti acara pembekalan atau pemberangkatan resmi Kampus.
           </p>
        </div>
-       <button onClick={() => onUpdate({ status: 'DEPLOYMENT_PENDING' })} className="btn-primary bg-slate-900 text-white shadow-xl hover:scale-105 transition-all">Submit Dokumentasi</button>
+       <label className={cn("btn-primary bg-slate-900 text-white shadow-xl hover:scale-105 transition-all cursor-pointer inline-block mx-auto", uploading && "opacity-50 pointer-events-none")}>
+          <input type="file" className="hidden" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0])} disabled={uploading} />
+          {uploading ? 'Mengunggah...' : 'Submit Dokumentasi'}
+       </label>
     </div>
   );
 }
 
 function LogbookStep({ registration, onUpdate }: { registration: KKNRegistration, onUpdate: (u: any) => void }) {
   const [isAdding, setIsAdding] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const targetHours = 126;
   const currentHours = registration.totalHours;
 
@@ -453,8 +549,21 @@ function LogbookStep({ registration, onUpdate }: { registration: KKNRegistration
     date: new Date().toISOString().split('T')[0],
     jenis: 'INDIVIDU',
     startTime: '08:00',
-    endTime: '12:00'
+    endTime: '12:00',
+    photos: []
   });
+
+  const handleUpload = async (file: File) => {
+    try {
+      setUploading(true);
+      const url = await uploadToCloudinary(file);
+      setForm(prev => ({ ...prev, photos: [...(prev.photos || []), url].slice(0, 3) }));
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -464,8 +573,8 @@ function LogbookStep({ registration, onUpdate }: { registration: KKNRegistration
       ...form as any,
       hours,
       status: 'PENDING',
-      photos: ['photo'],
-      scanLogbook: 'scan'
+      photos: form.photos || [],
+      scanLogbook: form.photos?.[0] || 'scan'
     };
     const updated = {
        ...registration,
@@ -474,6 +583,13 @@ function LogbookStep({ registration, onUpdate }: { registration: KKNRegistration
     };
     onUpdate(updated);
     setIsAdding(false);
+    setForm({
+      date: new Date().toISOString().split('T')[0],
+      jenis: 'INDIVIDU',
+      startTime: '08:00',
+      endTime: '12:00',
+      photos: []
+    });
   };
 
   return (
@@ -517,9 +633,21 @@ function LogbookStep({ registration, onUpdate }: { registration: KKNRegistration
                       </div>
                       <div>
                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dokumentasi (Maks 3)</label>
-                         <div className="card border-dashed p-10 bg-white/50 text-center hover:bg-white transition-all cursor-pointer">
-                            <FileUp className="mx-auto text-primary opacity-30" size={32} />
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Upload Foto & Scan</p>
+                         <label className={cn("card border-dashed p-10 bg-white/50 text-center hover:bg-white transition-all cursor-pointer relative overflow-hidden", uploading && "opacity-50")}>
+                            <input type="file" className="hidden" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0])} disabled={uploading} />
+                            {uploading ? (
+                               <Loader2 className="mx-auto text-primary animate-spin" size={32} />
+                            ) : (
+                               <FileUp className="mx-auto text-primary opacity-30" size={32} />
+                            )}
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">
+                               {uploading ? 'Mengunggah...' : `Upload Foto (${form.photos?.length}/3)`}
+                            </p>
+                         </label>
+                         <div className="flex gap-2 mt-2">
+                            {form.photos?.map((p, i) => (
+                               <img key={i} src={p} className="w-12 h-12 rounded-lg object-cover border border-white shadow-sm" referrerPolicy="no-referrer" />
+                            ))}
                          </div>
                       </div>
                    </div>
@@ -606,7 +734,23 @@ function LogbookStep({ registration, onUpdate }: { registration: KKNRegistration
 }
 
 function LPKStep({ registration, onUpdate }: { registration: KKNRegistration, onUpdate: (u: any) => void }) {
-  const [files, setFiles] = useState({ individu: false, kelompok: false });
+  const [files, setFiles] = useState<{ individu: string | null, kelompok: string | null }>({ 
+    individu: registration.lpk?.fileIndividu || null, 
+    kelompok: registration.lpk?.fileKelompok || null 
+  });
+  const [uploading, setUploading] = useState<string | null>(null);
+
+  const handleUpload = async (type: 'ind' | 'kel', file: File) => {
+    try {
+      setUploading(type);
+      const url = await uploadToCloudinary(file);
+      setFiles(prev => ({ ...prev, [type === 'ind' ? 'individu' : 'kelompok']: url }));
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(null);
+    }
+  };
 
   return (
     <div className="max-w-md mx-auto space-y-10 py-10">
@@ -620,21 +764,23 @@ function LPKStep({ registration, onUpdate }: { registration: KKNRegistration, on
           </p>
        </div>
        <div className="space-y-4">
-          <button onClick={() => setFiles({...files, individu: true})} className={cn("w-full py-6 card border-dashed flex items-center justify-center space-x-3 transition-all", files.individu ? "bg-primary/10 border-primary text-primary" : "text-slate-400")}>
-             <FileUp size={24} />
-             <span className="font-bold text-xs uppercase tracking-widest">{files.individu ? 'LPK Individu Terunggah' : 'Unggah LPK Individu'}</span>
-          </button>
-          <button onClick={() => setFiles({...files, kelompok: true})} className={cn("w-full py-6 card border-dashed flex items-center justify-center space-x-3 transition-all", files.kelompok ? "bg-primary/10 border-primary text-primary" : "text-slate-400")}>
-             <FileUp size={24} />
-             <span className="font-bold text-xs uppercase tracking-widest">{files.kelompok ? 'LPK Kelompok Terunggah' : 'Unggah LPK Kelompok'}</span>
-          </button>
+          <label className={cn("w-full py-6 card border-dashed flex items-center justify-center space-x-3 transition-all cursor-pointer relative", files.individu ? "bg-primary/10 border-primary text-primary" : "text-slate-400")}>
+             <input type="file" className="hidden" onChange={e => e.target.files?.[0] && handleUpload('ind', e.target.files[0])} disabled={!!uploading} />
+             {uploading === 'ind' ? <Loader2 className="animate-spin" size={24} /> : <FileUp size={24} />}
+             <span className="font-bold text-xs uppercase tracking-widest">{uploading === 'ind' ? 'Mengunggah...' : files.individu ? 'LPK Individu Terunggah' : 'Unggah LPK Individu'}</span>
+          </label>
+          <label className={cn("w-full py-6 card border-dashed flex items-center justify-center space-x-3 transition-all cursor-pointer relative", files.kelompok ? "bg-primary/10 border-primary text-primary" : "text-slate-400")}>
+             <input type="file" className="hidden" onChange={e => e.target.files?.[0] && handleUpload('kel', e.target.files[0])} disabled={!!uploading} />
+             {uploading === 'kel' ? <Loader2 className="animate-spin" size={24} /> : <FileUp size={24} />}
+             <span className="font-bold text-xs uppercase tracking-widest">{uploading === 'kel' ? 'Mengunggah...' : files.kelompok ? 'LPK Kelompok Terunggah' : 'Unggah LPK Kelompok'}</span>
+          </label>
        </div>
        <button 
-         disabled={!files.individu || !files.kelompok} 
-         onClick={() => onUpdate({ status: 'LPK_PENDING', lpk: { fileIndividu: 'path', fileKelompok: 'path', status: 'PENDING' } })} 
+         disabled={!files.individu || !files.kelompok || !!uploading} 
+         onClick={() => onUpdate({ status: 'LPK_PENDING', lpk: { fileIndividu: files.individu, fileKelompok: files.kelompok, status: 'PENDING' } })} 
          className="btn-primary w-full py-5 shadow-2xl scale-105 active:scale-95 disabled:opacity-20"
        >
-         Finalisasi & Kirim Laporan Akhir
+         {uploading ? 'Sedang Mengunggah...' : 'Finalisasi & Kirim Laporan Akhir'}
        </button>
     </div>
   );

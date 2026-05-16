@@ -11,24 +11,30 @@ import { pengabdianService, PengabdianRegistration } from '@/src/services/pengab
 export default function PengabdianDosenSection() {
   const [registration, setRegistration] = useState<PengabdianRegistration | null>(null);
   const [loading, setLoading] = useState(true);
-  const dosenId = 'current_dosen'; 
+  const userId = localStorage.getItem('user_id');
 
   useEffect(() => {
-    setRegistration(pengabdianService.getRegistrationByDosen(dosenId));
-    setLoading(false);
-  }, []);
+    const fetchData = async () => {
+      if (!userId) return;
+      const data = await pengabdianService.getRegistrationByDosen(userId);
+      setRegistration(data);
+      setLoading(false);
+    };
+    fetchData();
+  }, [userId]);
 
-  const handleEnroll = () => {
+  const handleEnroll = async () => {
+    if (!userId) return;
     const newReg: PengabdianRegistration = {
       id: Math.random().toString(36).substr(2, 9),
-      dosenId: 'current_dosen',
-      dosenName: localStorage.getItem('user_name') || 'Dosen STAI',
+      dosenId: userId,
+      dosenName: localStorage.getItem('user_name') || 'Dosen',
       status: 'SUBMITTED',
       docs: { suratTugas: true, proposal: true, kerjasama: true },
       logbooks: [],
       totalHours: 0
     };
-    pengabdianService.saveRegistration(newReg);
+    await pengabdianService.saveRegistration(newReg);
     setRegistration(newReg);
   };
 

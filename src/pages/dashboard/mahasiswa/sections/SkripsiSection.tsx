@@ -9,33 +9,56 @@ import {
 import { cn } from '@/src/lib/utils';
 import { skripsiService, SkripsiRegistration, SkripsiLogbook } from '@/src/services/skripsiService';
 
+import { uploadToCloudinary } from '@/src/lib/cloudinary';
+
 export default function SkripsiSection() {
   const [registration, setRegistration] = useState<SkripsiRegistration | null>(null);
   const [loading, setLoading] = useState(true);
-  const studentId = 'current_user';
+  const [uploading, setUploading] = useState<string | null>(null);
+
+  const userId = localStorage.getItem('user_id');
 
   useEffect(() => {
-    setRegistration(skripsiService.getRegistrationByStudent(studentId));
-    setLoading(false);
-  }, []);
+    const fetchData = async () => {
+      if (!userId) return;
+      const data = await skripsiService.getRegistrationByStudent(userId);
+      setRegistration(data);
+      setLoading(false);
+    };
+    fetchData();
+  }, [userId]);
 
-  const handleEnroll = (docs: any) => {
+  const handleUpload = async (file: File) => {
+    try {
+      setUploading('main');
+      const url = await uploadToCloudinary(file);
+      return url;
+    } catch (error) {
+      console.error('Upload failed:', error);
+      return null;
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const handleEnroll = async (docs: any) => {
+    if (!userId) return;
     const newReg: SkripsiRegistration = {
       id: Math.random().toString(36).substr(2, 9),
-      studentId,
-      studentName: localStorage.getItem('user_name') || 'Ahmad Maghfur',
+      studentId: userId,
+      studentName: localStorage.getItem('user_name') || 'Student',
       status: 'SUBMITTED',
       registrationDocs: docs,
       logbooks: []
     };
-    skripsiService.saveRegistration(newReg);
+    await skripsiService.saveRegistration(newReg);
     setRegistration(newReg);
   };
 
-  const updateRegistration = (updates: Partial<SkripsiRegistration>) => {
+  const updateRegistration = async (updates: Partial<SkripsiRegistration>) => {
     if (!registration) return;
     const updated = { ...registration, ...updates };
-    skripsiService.saveRegistration(updated);
+    await skripsiService.saveRegistration(updated);
     setRegistration(updated);
   };
 
@@ -242,20 +265,34 @@ function SkripsiEnrollment({ onEnroll }: { onEnroll: (docs: any) => void }) {
 
 function SkripsiBimbingan({ registration, onUpdate }: { registration: SkripsiRegistration, onUpdate: (u: any) => void }) {
   const [isAdding, setIsAdding] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState<Partial<SkripsiLogbook>>({
     date: new Date().toISOString().split('T')[0],
   });
 
+  const handleLogPhoto = async (file: File) => {
+    try {
+      setUploading(true);
+      const url = await uploadToCloudinary(file);
+      setForm(prev => ({ ...prev, photo: url }));
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    if (!form.photo) return;
     const newLog: SkripsiLogbook = {
       id: Math.random().toString(16),
       ...form as any,
-      status: 'PENDING',
-      photo: 'photo'
+      status: 'PENDING'
     };
     onUpdate({ logbooks: [newLog, ...registration.logbooks] });
     setIsAdding(false);
+    setForm({ date: new Date().toISOString().split('T')[0] });
   };
 
   const bimbinganCount = registration.logbooks.filter(l => l.status === 'APPROVED').length;
@@ -286,7 +323,19 @@ function SkripsiBimbingan({ registration, onUpdate }: { registration: SkripsiReg
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Catatan/Komentar</label>
                    <textarea className="input-field h-24" placeholder="Komentar pembimbing..." onChange={e => setForm({...form, comment: e.target.value})} required />
                 </div>
-                <button type="submit" className="w-full btn-primary py-4 text-[10px] tracking-widest shadow-xl">Simpan Logbook Bimbingan</button>
+                <div>
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Foto Bukti Bimbingan</label>
+                   <div className="flex items-center gap-4">
+                      <label className={cn("flex-grow h-24 rounded-xl border-2 border-dashed flex items-center justify-center transition-all cursor-pointer overflow-hidden", form.photo ? "border-primary" : "border-slate-200 text-slate-300 hover:border-primary/50")}>
+                         <input type="file" className="hidden" onChange={e => e.target.files?.[0] && handleLogPhoto(e.target.files[0])} disabled={uploading} />
+                         {uploading ? <Loader2 className="animate-spin" size={24} /> : form.photo ? <img src={form.photo} className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : <Camera size={24} />}
+                      </label>
+                      {form.photo && <div className="text-[10px] font-black text-primary uppercase italic">Terverifikasi di Cloudinary ✓</div>}
+                   </div>
+                </div>
+                <button type="submit" disabled={!form.photo || uploading} className="w-full btn-primary py-4 text-[10px] tracking-widest shadow-xl disabled:opacity-20">
+                   {uploading ? 'Sedang Mengunggah...' : 'Simpan Logbook Bimbingan'}
+                </button>
               </motion.form>
             )}
           </AnimatePresence>

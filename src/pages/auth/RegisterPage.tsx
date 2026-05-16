@@ -1,13 +1,15 @@
 import { useState, type FormEvent } from 'react';
 import { motion } from 'motion/react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Send, GraduationCap, BookOpen, AlertCircle, ArrowRight } from 'lucide-react';
+import { User, Mail, Lock, Send, GraduationCap, BookOpen, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
-import { UserRole } from '@/src/types';
+import { UserRole } from '@/src/types/index';
+import { supabase } from '@/src/lib/supabase';
 
 export default function RegisterPage() {
   const [role, setRole] = useState<UserRole>('MAHASISWA');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
 
@@ -24,16 +26,57 @@ export default function RegisterPage() {
     nomorYayasan: '',
   });
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    setError('');
+
+    try {
+      // 1. Supabase Auth Sign Up
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+            role: role,
+          }
+        }
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('Failed to create user');
+
+      // 2. Create Profile in 'profiles' table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          full_name: formData.fullName,
+          role: role,
+          email: formData.email,
+          nim_nidn: role === 'MAHASISWA' ? formData.nim : formData.nidn,
+          jurusan: formData.jurusan,
+          fakultas: formData.fakultas,
+          semester: role === 'MAHASISWA' ? parseInt(formData.semester) : null,
+          nomor_sk_yayasan: role === 'DOSEN' ? formData.nomorYayasan : null,
+        });
+
+      if (profileError) throw profileError;
+
+      // 3. Success Logic
       localStorage.setItem('user_role', role);
+      localStorage.setItem('user_id', authData.user.id);
       localStorage.setItem('user_name', formData.fullName);
-      setLoading(false);
+      
       navigate(`/dashboard/${role.toLowerCase()}`);
-      window.location.reload(); // Refresh to update Navbar State
-    }, 1500);
+      window.location.reload(); 
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      setError(err.message || 'Gagal mendaftar. Silakan coba lagi.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const nextStep = () => setStep(step + 1);
@@ -62,6 +105,16 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center space-x-3 text-red-600 text-sm"
+              >
+                <AlertCircle size={18} />
+                <p>{error}</p>
+              </motion.div>
+            )}
             {step === 1 && (
               <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8">
                 <div className="grid grid-cols-2 gap-6">

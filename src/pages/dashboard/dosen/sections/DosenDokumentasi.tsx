@@ -11,18 +11,24 @@ import { penelitianService, DosenDokumentasi } from '@/src/services/penelitianSe
 export default function DosenDokumentasiSection() {
   const [docs, setDocs] = useState<DosenDokumentasi[]>([]);
   const [isAdding, setIsAdding] = useState(false);
-  const dosenId = 'dosen_123';
+  const userId = localStorage.getItem('user_id');
 
   useEffect(() => {
-    setDocs(penelitianService.getDokumentasi(dosenId));
-  }, []);
+    const fetchData = async () => {
+      if (!userId) return;
+      const data = await penelitianService.getDokumentasi(userId);
+      setDocs(data);
+    };
+    fetchData();
+  }, [userId]);
 
-  const handleSave = (e: FormEvent) => {
+  const handleSave = async (e: FormEvent) => {
     e.preventDefault();
+    if (!userId) return;
     const formData = new FormData(e.target as HTMLFormElement);
     const newDoc: DosenDokumentasi = {
       id: Math.random().toString(36).substr(2, 9),
-      dosenId,
+      dosenId: userId,
       jenisKarya: formData.get('jenis') as string,
       judul: formData.get('judul') as string,
       tanggal: formData.get('tanggal') as string,
@@ -32,7 +38,7 @@ export default function DosenDokumentasiSection() {
       platform: formData.get('platform') as any,
       fileUrl: '#'
     };
-    penelitianService.saveDokumentasi(newDoc);
+    await penelitianService.saveDokumentasi(newDoc);
     setDocs([newDoc, ...docs]);
     setIsAdding(false);
   };

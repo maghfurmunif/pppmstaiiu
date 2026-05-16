@@ -28,9 +28,30 @@ export default function App() {
               <Route path="/register" element={<RegisterPage />} />
               
               {/* Dashboard Routes with nested dynamic routing as requested */}
-              <Route path="/dashboard/mahasiswa/*" element={<MahasiswaDashboard />} />
-              <Route path="/dashboard/dosen/*" element={<DosenDashboard />} />
-              <Route path="/dashboard/admin/*" element={<AdminDashboard />} />
+              <Route 
+                path="/dashboard/mahasiswa/*" 
+                element={
+                  localStorage.getItem('user_role') === 'MAHASISWA' 
+                    ? <MahasiswaDashboard /> 
+                    : <Navigate to="/dashboard/dosen" replace />
+                } 
+              />
+              <Route 
+                path="/dashboard/dosen/*" 
+                element={
+                  localStorage.getItem('user_role') === 'DOSEN' 
+                    ? <DosenDashboard /> 
+                    : <Navigate to="/dashboard/mahasiswa" replace />
+                } 
+              />
+              <Route 
+                path="/dashboard/admin/*" 
+                element={
+                  localStorage.getItem('user_role') === 'ADMIN' 
+                    ? <AdminDashboard /> 
+                    : <Navigate to="/" replace />
+                } 
+              />
               
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

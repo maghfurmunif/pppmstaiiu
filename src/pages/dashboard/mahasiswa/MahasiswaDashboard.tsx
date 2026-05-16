@@ -1,8 +1,9 @@
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { LayoutDashboard, Users, UserCheck, BookOpen, GraduationCap, ArrowLeft, Loader2, ArrowRight, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, UserCheck, BookOpen, GraduationCap, ArrowLeft, Loader2, ArrowRight, LogOut, Check } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
+import { supabase } from '@/src/lib/supabase';
 
 // Lazy load sub-sections for performance
 const KKNSection = lazy(() => import('./sections/KKNSection'));
@@ -10,7 +11,16 @@ const SemproSection = lazy(() => import('./sections/SemproSection'));
 const SkripsiSection = lazy(() => import('./sections/SkripsiSection'));
 
 export default function MahasiswaDashboard() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const userName = localStorage.getItem('user_name') || 'User';
+  const userId = localStorage.getItem('user_id');
+
+  useEffect(() => {
+    if (!userId) navigate('/login');
+  }, [userId, navigate]);
+
   const menus = [
     { id: 'overview', name: 'Dashboard', path: '/dashboard/mahasiswa', icon: LayoutDashboard },
     { id: 'kkn-pribadi', name: 'KKN Pribadi', path: '/dashboard/mahasiswa/kkn', icon: Users },
@@ -20,8 +30,63 @@ export default function MahasiswaDashboard() {
     { id: 'account', name: 'Akun Saya', path: '/dashboard/mahasiswa/account', icon: Users },
   ];
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    localStorage.clear();
+    window.location.href = '/';
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 flex text-slate-900">
+    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row text-slate-900">
+      {/* Mobile Header */}
+      <div className="lg:hidden h-20 bg-white border-b border-slate-100 flex items-center justify-between px-6 sticky top-0 z-50">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold italic">STAI</div>
+          <span className="font-black text-xs uppercase tracking-widest italic text-slate-900">Student Portal</span>
+        </div>
+        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 bg-slate-50 rounded-xl text-slate-900">
+          {isMobileMenuOpen ? <Bell className="rotate-90" /> : <Layers />}
+        </button>
+      </div>
+
+      {/* Mobile Drawer */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div 
+            initial={{ x: '-100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '-100%' }}
+            className="fixed inset-0 z-40 lg:hidden bg-slate-900 p-6 flex flex-col space-y-4"
+          >
+             <div className="flex justify-between items-center mb-10">
+                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold italic">STAI</div>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="text-white ring-1 ring-white/20 p-2 rounded-xl">Tutup</button>
+             </div>
+             <div className="flex-grow space-y-2 overflow-y-auto pr-2">
+                {menus.map(menu => (
+                  <Link 
+                    key={menu.id} 
+                    to={menu.path} 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={cn(
+                      "flex items-center space-x-4 p-4 rounded-2xl transition-all font-bold text-xs uppercase tracking-[0.2em]",
+                      location.pathname === menu.path ? "bg-primary text-white shadow-xl" : "text-white/40 hover:text-white"
+                    )}
+                  >
+                    <menu.icon size={18} />
+                    <span>{menu.name}</span>
+                  </Link>
+                ))}
+             </div>
+             <button 
+                onClick={handleLogout}
+                className="w-full py-5 bg-red-600/20 text-red-500 rounded-2xl font-black text-xs uppercase tracking-widest"
+              >
+                Logout Sesi
+             </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Sidebar */}
       <aside className="w-72 hidden lg:flex flex-col sticky top-20 h-[calc(100vh-80px)] p-6 z-20">
         <div className="glass-morphism h-full rounded-[32px] p-4 flex flex-col shadow-xl border-white/40">
@@ -63,11 +128,7 @@ export default function MahasiswaDashboard() {
               </div>
             </div>
             <button 
-              onClick={() => {
-                localStorage.removeItem('user_role');
-                localStorage.removeItem('user_name');
-                window.location.href = '/';
-              }}
+              onClick={handleLogout}
               className="w-full flex items-center justify-center space-x-2 py-3.5 bg-red-50 text-red-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all border border-red-100"
             >
               <LogOut size={14} />
@@ -105,8 +166,26 @@ export default function MahasiswaDashboard() {
 
 function DashboardOverview() {
   const navigate = useNavigate();
+  const [activities, setActivities] = useState<any[]>([]);
+  const userId = localStorage.getItem('user_id');
+
+  useEffect(() => {
+    const fetchActivities = async () => {
+      if (!userId) return;
+      const { data } = await supabase
+        .from('logbooks')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
+      if (data) setActivities(data);
+    };
+    fetchActivities();
+  }, [userId]);
+
   const stats = [
-    { label: 'KKN Progress', status: 'Not Enrolled', color: 'slate', value: 0, icon: Users, path: '/dashboard/mahasiswa/kkn' },
+    { label: 'KKN Progress', status: 'Active', color: 'primary', value: 25, icon: Users, path: '/dashboard/mahasiswa/kkn' },
     { label: 'Sempro Status', status: 'Idle', color: 'slate', value: 0, icon: BookOpen, path: '/dashboard/mahasiswa/sempro' },
     { label: 'Skripsi Phase', status: 'Locked', color: 'slate', value: 0, icon: GraduationCap, path: '/dashboard/mahasiswa/skripsi' },
   ];
@@ -119,16 +198,12 @@ function DashboardOverview() {
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             <span>Academic Session 2024/2025</span>
           </div>
-          <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Halo, <span className="text-primary italic">{localStorage.getItem('user_name') || 'Maghfur'}</span> 👋</h1>
+          <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Halo, <span className="text-primary italic">{localStorage.getItem('user_name') || 'Student'}</span> 👋</h1>
           <p className="text-slate-500 font-medium">Lacak progress akademik dan pengabdian Anda di sini.</p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <button className="px-6 py-3 bg-white rounded-2xl shadow-sm border border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-widest hover:border-primary/30 transition-all flex items-center">
-            View Public Profile
-          </button>
         </div>
       </div>
 
+      {/* Stats ... same as before but maybe with real count if I had them */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {stats.map((stat, i) => (
           <div 
@@ -174,21 +249,22 @@ function DashboardOverview() {
             <button className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Full History</button>
           </div>
           <div className="space-y-4">
-             {[
-               { title: 'Laporan Mingguan KKN Ke-4 Disetujui', time: '2h ago', icon: Users, color: 'bg-primary/10 text-primary' },
-               { title: 'Pembimbing Skripsi Ditentukan', time: 'Yesterday', icon: GraduationCap, color: 'bg-slate-100 text-slate-400' }
-             ].map((activity, i) => (
-               <div key={i} className="card p-6 flex items-center space-x-5 hover:border-primary/20 transition-all cursor-pointer group">
-                 <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform", activity.color)}>
-                    <activity.icon size={20} />
+             {activities.length === 0 ? (
+               <div className="card p-10 text-center text-slate-400 italic text-xs">Belum ada aktivitas tercatat.</div>
+             ) : (
+               activities.map((activity, i) => (
+                 <div key={i} className="card p-6 flex items-center space-x-5 hover:border-primary/20 transition-all cursor-pointer group">
+                   <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform bg-primary/10 text-primary")}>
+                      <Users size={20} />
+                   </div>
+                   <div className="flex-grow min-w-0">
+                      <p className="text-sm font-bold text-slate-800 truncate">{activity.activity}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{new Date(activity.created_at).toLocaleDateString()}</p>
+                   </div>
+                   <ArrowRight size={16} className="text-slate-200 group-hover:text-primary transition-colors" />
                  </div>
-                 <div className="flex-grow min-w-0">
-                    <p className="text-sm font-bold text-slate-800 truncate">{activity.title}</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{activity.time}</p>
-                 </div>
-                 <ArrowRight size={16} className="text-slate-200 group-hover:text-primary transition-colors" />
-               </div>
-             ))}
+               ))
+             )}
           </div>
         </div>
         

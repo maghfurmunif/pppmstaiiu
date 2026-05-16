@@ -13,7 +13,11 @@ export default function AdminDokumentasi() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    setDocs(penelitianService.getDokumentasi());
+    const fetchData = async () => {
+      const data = await penelitianService.getDokumentasi();
+      setDocs(data);
+    };
+    fetchData();
   }, []);
 
   const filtered = docs.filter(d => 

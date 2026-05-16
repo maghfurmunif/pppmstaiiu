@@ -1,4 +1,6 @@
 
+import { supabase } from '@/src/lib/supabase';
+
 export type AcademicStatus = 'ENROLL' | 'SUBMITTED' | 'REJECTED' | 'APPROVED' | 'SCHEDULED' | 'PROGRESS' | 'DOCS_SUBMITTED' | 'GRADING' | 'COMPLETED';
 
 export interface SemproRegistration {
@@ -8,48 +10,59 @@ export interface SemproRegistration {
   status: AcademicStatus;
   rejectionReason?: string;
   proposalFile?: string;
-  
-  // Admin assigns
-  schedule?: {
-    tanggal: string;
-    hari: string;
-    pukul: string;
-    ruang: string;
-    sifat: string;
-    catatan?: string;
-  };
-  
-  // Student uploads proof
-  proof?: {
-    docs: string[]; // min 3
-    notes: string[]; // max 3
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  };
-  
+  schedule?: any;
+  proof?: any;
   grade?: string;
 }
 
-const STORAGE_KEY_SEMPRO = 'sempro_registrations';
-
 export const semproService = {
-  getRegistrations: (): SemproRegistration[] => {
-    const data = localStorage.getItem(STORAGE_KEY_SEMPRO);
-    return data ? JSON.parse(data) : [];
-  },
-
-  getRegistrationByStudent: (studentId: string): SemproRegistration | null => {
-    const regs = semproService.getRegistrations();
-    return regs.find(r => r.studentId === studentId) || null;
-  },
-
-  saveRegistration: (reg: SemproRegistration) => {
-    const regs = semproService.getRegistrations();
-    const index = regs.findIndex(r => r.id === reg.id);
-    if (index > -1) {
-      regs[index] = reg;
-    } else {
-      regs.push(reg);
+  getRegistrations: async (): Promise<SemproRegistration[]> => {
+    const { data, error } = await supabase
+      .from('sempro_registrations')
+      .select('*, profiles(full_name)');
+    
+    if (error) {
+      console.error('Error fetching sempro registrations:', error);
+      return [];
     }
-    localStorage.setItem(STORAGE_KEY_SEMPRO, JSON.stringify(regs));
+
+    return (data || []).map(r => ({
+      ...r,
+      studentId: r.student_id,
+      studentName: r.profiles?.full_name || 'Student'
+    }));
+  },
+
+  getRegistrationByStudent: async (studentId: string): Promise<SemproRegistration | null> => {
+    const { data, error } = await supabase
+      .from('sempro_registrations')
+      .select('*, profiles(full_name)')
+      .eq('student_id', studentId)
+      .single();
+    
+    if (error) {
+      if (error.code !== 'PGRST116') console.error('Error fetching sempro registration:', error);
+      return null;
+    }
+
+    return {
+      ...data,
+      studentId: data.student_id,
+      studentName: data.profiles?.full_name || 'Student'
+    };
+  },
+
+  saveRegistration: async (reg: SemproRegistration) => {
+    const { id, studentId, studentName, ...rest } = reg;
+    const { error } = await supabase
+      .from('sempro_registrations')
+      .upsert({ 
+        id, 
+        ...rest, 
+        student_id: studentId,
+        updated_at: new Date().toISOString()
+      });
+
+    if (error) throw error;
   }
 };
