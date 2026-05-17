@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   FileUp, CheckCircle2, Calendar, Clock, 
   AlertCircle, Camera, Loader2, Download, ExternalLink,
-  GraduationCap, BookOpen, FileText, Info, UserCheck, MessageSquare
+  GraduationCap, BookOpen, FileText, Info, UserCheck, MessageSquare, Eye
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { skripsiService, SkripsiRegistration, SkripsiLogbook } from '@/src/services/skripsiService';

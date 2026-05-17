@@ -142,12 +142,6 @@ ALTER TABLE public.pengabdian_registrations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.dosen_dokumentasi ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.logbooks ENABLE ROW LEVEL SECURITY;
 
--- Seed Admin
--- This assumes the auth user with this UUID already exists.
-INSERT INTO public.profiles (id, email, full_name, role, fakultas)
-VALUES ('f73b5da8-b142-4f01-8b38-31a54e9d4561', 'maghfurmunif@gmail.com', 'Admin Maghfur', 'admin', 'Tarbiyah')
-ON CONFLICT (id) DO UPDATE SET role = 'admin', fakultas = 'Tarbiyah';
-
 -- RLS Policies
 
 -- Create a security definer function to avoid infinite recursion
@@ -156,7 +150,7 @@ RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE id = auth.uid() AND role = 'admin'
+    WHERE id = auth.uid() AND UPPER(role) = 'ADMIN'
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

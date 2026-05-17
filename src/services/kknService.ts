@@ -40,42 +40,49 @@ export interface KKNLogbook {
 
 export const kknService = {
   getRegistrations: async (): Promise<KKNRegistration[]> => {
-    const { data, error } = await supabase
+    const { data: regs, error } = await supabase
       .from('kkn_registrations')
-      .select('*, profiles(full_name)');
+      .select('*');
     
     if (error) {
       console.error('Error fetching registrations:', error);
       return [];
     }
 
-    return (data || []).map(r => ({
+    if (!regs || regs.length === 0) return [];
+
+    const studentIds = Array.from(new Set(regs.map(r => r.student_id)));
+    const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', studentIds);
+    const profileMap = (profiles || []).reduce((acc: any, p) => ({ ...acc, [p.id]: p.full_name }), {});
+
+    return regs.map(r => ({
       ...r,
       studentId: r.student_id,
-      studentName: r.profiles?.full_name || 'Student',
-      // Ensure these are arrays/numbers and don't overwrite if they exist in DB
+      studentName: profileMap[r.student_id] || 'Student',
       logbooks: r.logbooks || [],
       totalHours: r.totalHours || 0
     }));
   },
 
   getRegistrationByStudent: async (studentId: string, type: 'REGULER' | 'MANDIRI'): Promise<KKNRegistration | null> => {
-    const { data, error } = await supabase
+    const { data: reg, error } = await supabase
       .from('kkn_registrations')
-      .select('*, profiles(full_name)')
+      .select('*')
       .eq('student_id', studentId)
       .eq('type', type)
-      .single();
+      .maybeSingle();
     
-    if (error) {
-      if (error.code !== 'PGRST116') console.error('Error fetching registration:', error);
+    if (error || !reg) {
+      if (error) console.error('Error fetching registration:', error);
       return null;
     }
 
+    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', studentId).maybeSingle();
+
     return {
-      ...data,
-      studentId: data.student_id,
-      studentName: data.profiles?.full_name || 'Student'
+      ...reg,
+      studentId: reg.student_id,
+      studentName: profile?.full_name || 'Student'
     };
   },
 

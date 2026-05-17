@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { ArrowRight, BookOpen, Users, BarChart3, Globe, GraduationCap } from 'lucide-react';
+import { ArrowRight, BookOpen, Users, BarChart3, Globe, GraduationCap, Landmark } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 

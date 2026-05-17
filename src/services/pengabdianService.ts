@@ -25,42 +25,50 @@ export interface PengabdianLogbook {
 
 export const pengabdianService = {
   getRegistrations: async (): Promise<PengabdianRegistration[]> => {
-    const { data, error } = await supabase
+    const { data: regs, error } = await supabase
       .from('pengabdian_registrations')
-      .select('*, profiles(full_name)');
+      .select('*');
     
     if (error) {
       console.error('Error fetching pengabdian registrations:', error);
       return [];
     }
 
-    return (data || []).map(r => ({
+    if (!regs || regs.length === 0) return [];
+
+    const dosenIds = Array.from(new Set(regs.map(r => r.dosen_id)));
+    const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', dosenIds);
+    const profileMap = (profiles || []).reduce((acc: any, p) => ({ ...acc, [p.id]: p.full_name }), {});
+
+    return regs.map(r => ({
       ...r,
       dosenId: r.dosen_id,
-      dosenName: r.profiles?.full_name || 'Dosen',
+      dosenName: profileMap[r.dosen_id] || 'Dosen',
       logbooks: r.logbooks || [],
       totalHours: r.totalHours || 0
     }));
   },
 
   getRegistrationByDosen: async (dosenId: string): Promise<PengabdianRegistration | null> => {
-    const { data, error } = await supabase
+    const { data: reg, error } = await supabase
       .from('pengabdian_registrations')
-      .select('*, profiles(full_name)')
+      .select('*')
       .eq('dosen_id', dosenId)
-      .single();
+      .maybeSingle();
     
-    if (error) {
-      if (error.code !== 'PGRST116') console.error('Error fetching pengabdian registration:', error);
+    if (error || !reg) {
+      if (error) console.error('Error fetching pengabdian registration:', error);
       return null;
     }
 
+    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', dosenId).maybeSingle();
+
     return {
-      ...data,
-      dosenId: data.dosen_id,
-      dosenName: data.profiles?.full_name || 'Dosen',
-      logbooks: data.logbooks || [],
-      totalHours: data.totalHours || 0
+      ...reg,
+      dosenId: reg.dosen_id,
+      dosenName: profile?.full_name || 'Dosen',
+      logbooks: reg.logbooks || [],
+      totalHours: reg.totalHours || 0
     };
   },
 

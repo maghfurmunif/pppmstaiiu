@@ -3,7 +3,8 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   FileUp, Info, CheckCircle2, MapPin, Users, 
-  Calendar, ArrowRight, Loader2, Clock, AlertCircle, Camera
+  Calendar, ArrowRight, Loader2, Clock, AlertCircle, Camera,
+  BookOpen, Download
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { kknService, KKNRegistration, KKNStatus, KKNLogbook } from '@/src/services/kknService';
@@ -294,28 +295,42 @@ function RegistrationStep({ registration, onUpdate }: { registration: KKNRegistr
       </div>
       
       <div className="space-y-6">
-        <h3 className="text-lg font-bold text-slate-900 italic ml-1">Status Pengajuan</h3>
-        <div className="card p-10 flex flex-col items-center justify-center text-center space-y-6 min-h-[400px]">
-          <div className={cn(
-             "w-20 h-20 rounded-full flex items-center justify-center border-4",
-             isComplete ? "border-primary/20 text-primary" : "border-slate-100 text-slate-200"
-          )}>
-            {isComplete ? <CheckCircle2 size={40} /> : <FileUp size={40} />}
-          </div>
-          <div className="space-y-2">
-            <h4 className="text-xl font-bold text-slate-900">Menunggu Submit</h4>
-            <p className="text-sm text-slate-400 font-medium">
-              {isComplete ? 'Semua berkas telah siap. Klik tombol di bawah untuk mengirim data ke Admin.' : 'Silakan lengkapi semua dokumen di samping untuk melanjutkan.'}
-            </p>
-          </div>
-          <button 
-            disabled={!isComplete} 
-            onClick={() => onUpdate({ status: 'SUBMITTED' })} 
-            className="w-full py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-20"
-          >
-            Ajukan Pendaftaran
-          </button>
-          <p className="text-[10px] text-slate-400 italic">Demo Mode: Admin will see your data in their dashboard.</p>
+        <h3 className="text-lg font-bold text-slate-900 italic ml-1">Pusat Unduhan & Template</h3>
+        <div className="card p-8 bg-slate-950 text-white overflow-hidden relative min-h-[400px] flex flex-col justify-center">
+           <div className="relative z-10 space-y-8">
+              {[
+                { name: 'Template RKL (Rencana Kegiatan)', link: 'https://docs.google.com/document/d/1dmksXSoHHpg_5pJMYfOyuztYRU3Crj2M/edit?usp=drive_link&ouid=114172484404944105413&rtpof=true&sd=true' },
+                { name: 'Template LPK (Laporan Pelaksanaan)', link: 'https://docs.google.com/document/d/1dmksXSoHHpg_5pJMYfOyuztYRU3Crj2M/edit?usp=drive_link&ouid=114172484404944105413&rtpof=true&sd=true' },
+                { name: 'Buku Panduan KKN 2024/2025', link: 'https://docs.google.com/document/d/1dmksXSoHHpg_5pJMYfOyuztYRU3Crj2M/edit?usp=drive_link&ouid=114172484404944105413&rtpof=true&sd=true' }
+              ].map((item, i) => (
+                <div key={i} className="flex items-center justify-between group border-b border-white/5 pb-4 last:border-0 last:pb-0">
+                   <div className="flex flex-col">
+                      <span className="text-sm font-bold text-slate-100 italic">{item.name}</span>
+                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">G-Docs Document</span>
+                   </div>
+                   <button 
+                     onClick={() => window.open(item.link, '_blank')}
+                     className="px-4 py-2 bg-primary/20 text-primary border border-primary/20 rounded-xl hover:bg-primary hover:text-white transition-all font-black text-[9px] tracking-widest"
+                   >
+                     UNDUH
+                   </button>
+                </div>
+              ))}
+              
+              <div className="pt-6">
+                <button 
+                  disabled={!isComplete} 
+                  onClick={() => onUpdate({ status: 'SUBMITTED' })} 
+                  className="w-full py-5 bg-primary text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/40 disabled:opacity-20 transition-all hover:scale-[1.02] active:scale-95"
+                >
+                  Ajukan Pendaftaran KKN
+                </button>
+                {!isComplete && (
+                   <p className="text-[10px] text-slate-500 italic mt-4 text-center">Lengkapi unggahan berkas di samping untuk mengaktifkan tombol submit.</p>
+                )}
+              </div>
+           </div>
+           <BookOpen className="absolute -right-12 -bottom-12 opacity-5 text-white" size={240} />
         </div>
       </div>
     </div>

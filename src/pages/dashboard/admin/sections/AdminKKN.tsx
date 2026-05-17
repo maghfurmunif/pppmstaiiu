@@ -7,7 +7,7 @@ import {
   FileText, Activity, AlertCircle, Save
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
-import { kknService, KKNRegistration, KKNLogbook } from '@/src/services/kknService';
+import { kknService, KKNRegistration, KKNLogbook, KKNStatus } from '@/src/services/kknService';
 
 export default function AdminKKN() {
   const [registrations, setRegistrations] = useState<KKNRegistration[]>([]);

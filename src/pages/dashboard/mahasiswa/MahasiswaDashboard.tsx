@@ -185,9 +185,9 @@ function DashboardOverview() {
   }, [userId]);
 
   const stats = [
-    { label: 'KKN Progress', status: 'Active', color: 'primary', value: 25, icon: Users, path: '/dashboard/mahasiswa/kkn' },
-    { label: 'Sempro Status', status: 'Idle', color: 'slate', value: 0, icon: BookOpen, path: '/dashboard/mahasiswa/sempro' },
-    { label: 'Skripsi Phase', status: 'Locked', color: 'slate', value: 0, icon: GraduationCap, path: '/dashboard/mahasiswa/skripsi' },
+    { label: 'KKN Reguler', status: 'Cek Progress', color: 'primary', value: 0, icon: Users, path: '/dashboard/mahasiswa/kkn' },
+    { label: 'KKN Mandiri', status: 'Cek Progress', color: 'slate', value: 0, icon: Users, path: '/dashboard/mahasiswa/kkn-mandiri' },
+    { label: 'Tugas Akhir', status: 'Sedang Berjalan', color: 'slate', value: 0, icon: GraduationCap, path: '/dashboard/mahasiswa/skripsi' },
   ];
 
   return (
@@ -269,29 +269,26 @@ function DashboardOverview() {
         </div>
         
         <div className="space-y-6">
-          <h2 className="text-xl font-bold text-slate-900 italic">Verifikasi Berkas</h2>
+          <h2 className="text-xl font-bold text-slate-900 italic">Pusat Unduhan & Panduan</h2>
           <div className="card p-8 bg-slate-900 text-white overflow-hidden relative">
              <div className="relative z-10 space-y-6">
                 {[
-                  { name: 'KTM Digital', checked: true },
-                  { name: 'Transkrip Nilai (Lulus Kriteria)', checked: true },
-                  { name: 'Sertifikat TOEFL/TOAFL', checked: false }
+                  { name: 'Template RKL (Rencana Kegiatan)', link: 'https://docs.google.com/document/d/1dmksXSoHHpg_5pJMYfOyuztYRU3Crj2M/edit?usp=drive_link&ouid=114172484404944105413&rtpof=true&sd=true' },
+                  { name: 'Template LPK (Laporan Pelaksanaan)', link: 'https://docs.google.com/document/d/1dmksXSoHHpg_5pJMYfOyuztYRU3Crj2M/edit?usp=drive_link&ouid=114172484404944105413&rtpof=true&sd=true' },
+                  { name: 'Buku Panduan KKN 2024/2025', link: 'https://docs.google.com/document/d/1dmksXSoHHpg_5pJMYfOyuztYRU3Crj2M/edit?usp=drive_link&ouid=114172484404944105413&rtpof=true&sd=true' }
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center justify-between">
+                  <div key={i} className="flex items-center justify-between group">
                      <span className="text-sm font-bold text-slate-300">{item.name}</span>
-                     {item.checked ? (
-                       <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white">
-                         <CheckIcon size={14} strokeWidth={4} />
-                       </div>
-                     ) : (
-                       <div className="w-6 h-6 rounded-full border-2 border-slate-700" />
-                     )}
+                     <button 
+                       onClick={() => window.open(item.link, '_blank')}
+                       className="p-2 bg-primary/20 text-primary rounded-xl hover:bg-primary hover:text-white transition-all font-bold text-[10px]"
+                     >
+                       DOWNLOAD
+                     </button>
                   </div>
                 ))}
                 <div className="pt-2">
-                  <button className="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all">
-                    Upload Missing Files
-                  </button>
+                   <p className="text-[10px] text-slate-500 italic max-w-[200px]">Pastikan menggunakan template resmi terbaru.</p>
                 </div>
              </div>
              <div className="absolute -right-10 -bottom-10 opacity-10">

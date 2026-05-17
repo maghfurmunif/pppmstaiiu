@@ -163,7 +163,7 @@ function PengabdianApproval({ reg, onAction }: { reg: PengabdianRegistration, on
                    <FileText className="text-primary" />
                    <span className="text-sm font-bold text-slate-700">Surat_Tugas.pdf</span>
                 </div>
-                <button onClick={() => reg.suratTugas && window.open(reg.suratTugas, '_blank')}>
+                <button onClick={() => reg.docs?.suratTugas && window.open(reg.docs.suratTugas, '_blank')}>
                    <Eye size={18} className="text-primary cursor-pointer hover:scale-110 transition-transform" />
                 </button>
              </div>
@@ -172,7 +172,7 @@ function PengabdianApproval({ reg, onAction }: { reg: PengabdianRegistration, on
                    <FileText className="text-primary" />
                    <span className="text-sm font-bold text-slate-700">Proposal_Pengabdian.pdf</span>
                 </div>
-                <button onClick={() => reg.proposalFile && window.open(reg.proposalFile, '_blank')}>
+                <button onClick={() => reg.docs?.proposalFile && window.open(reg.docs.proposalFile, '_blank')}>
                    <Eye size={18} className="text-primary cursor-pointer hover:scale-110 transition-transform" />
                 </button>
              </div>

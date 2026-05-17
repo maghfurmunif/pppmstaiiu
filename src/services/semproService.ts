@@ -21,38 +21,63 @@ export interface SemproRegistration {
 
 export const semproService = {
   getRegistrations: async (): Promise<SemproRegistration[]> => {
-    const { data, error } = await supabase
+    // Phase 1: Fetch registrations
+    const { data: regs, error: regError } = await supabase
       .from('sempro_registrations')
-      .select('*, profiles(full_name)');
+      .select('*');
     
-    if (error) {
-      console.error('Error fetching sempro registrations:', error);
+    if (regError) {
+      console.error('Error fetching sempro registrations:', regError);
       return [];
     }
 
-    return (data || []).map(r => ({
+    if (!regs || regs.length === 0) return [];
+
+    // Phase 2: Fetch profiles for the students in these registrations
+    const studentIds = Array.from(new Set(regs.map(r => r.student_id)));
+    const { data: profiles, error: profError } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', studentIds);
+
+    const profileMap = (profiles || []).reduce((acc: any, p) => {
+      acc[p.id] = p.full_name;
+      return acc;
+    }, {});
+
+    return regs.map(r => ({
       ...r,
       studentId: r.student_id,
-      studentName: r.profiles?.full_name || 'Student'
+      studentName: profileMap[r.student_id] || 'Student'
     }));
   },
 
   getRegistrationByStudent: async (studentId: string): Promise<SemproRegistration | null> => {
-    const { data, error } = await supabase
+    // Phase 1: Fetch registration
+    const { data: reg, error: regError } = await supabase
       .from('sempro_registrations')
-      .select('*, profiles(full_name)')
+      .select('*')
       .eq('student_id', studentId)
-      .single();
+      .maybeSingle();
     
-    if (error) {
-      if (error.code !== 'PGRST116') console.error('Error fetching sempro registration:', error);
-      return null;
+    if (regError) {
+       console.error('Error fetching sempro registration:', regError);
+       return null;
     }
 
+    if (!reg) return null;
+
+    // Phase 2: Fetch profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', studentId)
+      .maybeSingle();
+
     return {
-      ...data,
-      studentId: data.student_id,
-      studentName: data.profiles?.full_name || 'Student'
+      ...reg,
+      studentId: reg.student_id,
+      studentName: profile?.full_name || 'Student'
     };
   },
 
