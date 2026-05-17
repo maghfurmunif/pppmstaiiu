@@ -41,11 +41,15 @@ export const pengabdianService = {
     const profileMap = (profiles || []).reduce((acc: any, p) => ({ ...acc, [p.id]: p.full_name }), {});
 
     return regs.map(r => ({
-      ...r,
+      id: r.id,
       dosenId: r.dosen_id,
       dosenName: profileMap[r.dosen_id] || 'Dosen',
+      status: r.status,
+      rejectionReason: r.rejection_reason,
+      docs: r.docs,
+      info: r.info,
       logbooks: r.logbooks || [],
-      totalHours: r.totalHours || 0
+      totalHours: r.total_hours || 0
     }));
   },
 
@@ -64,11 +68,15 @@ export const pengabdianService = {
     const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', dosenId).maybeSingle();
 
     return {
-      ...reg,
+      id: reg.id,
       dosenId: reg.dosen_id,
       dosenName: profile?.full_name || 'Dosen',
+      status: reg.status,
+      rejectionReason: reg.rejection_reason,
+      docs: reg.docs,
+      info: reg.info,
       logbooks: reg.logbooks || [],
-      totalHours: reg.totalHours || 0
+      totalHours: reg.total_hours || 0
     };
   },
 
@@ -76,10 +84,10 @@ export const pengabdianService = {
     const dbPayload: any = {
       dosen_id: reg.dosenId,
       status: reg.status,
-      rejectionReason: reg.rejectionReason,
+      rejection_reason: reg.rejectionReason,
       docs: reg.docs,
       info: reg.info,
-      totalHours: reg.totalHours,
+      total_hours: reg.totalHours,
       logbooks: reg.logbooks,
       updated_at: new Date().toISOString()
     };
@@ -90,7 +98,7 @@ export const pengabdianService = {
 
     const { error } = await supabase
       .from('pengabdian_registrations')
-      .upsert(dbPayload);
+      .upsert(dbPayload, { onConflict: 'dosen_id' });
 
     if (error) {
       console.error('Pengabdian Upsert Error:', error);

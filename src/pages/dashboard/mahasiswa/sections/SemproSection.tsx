@@ -45,17 +45,33 @@ export default function SemproSection() {
     }
   };
 
+  const [error, setError] = useState<string | null>(null);
+
   const handleEnroll = async () => {
     if (!userId || !docs.proposal) return;
-    const newReg: SemproRegistration = {
-      id: '', // Let DB generate UUID
-      studentId: userId,
-      studentName: localStorage.getItem('user_name') || 'Student',
-      status: 'SUBMITTED',
-      proposalFile: docs.proposal
-    };
-    await semproService.saveRegistration(newReg);
-    setRegistration(newReg);
+    try {
+      setError(null);
+      setUploading(true);
+      const newReg: SemproRegistration = {
+        id: crypto.randomUUID(), 
+        studentId: userId,
+        studentName: localStorage.getItem('user_name') || 'Student',
+        status: 'SUBMITTED',
+        proposalFile: docs.proposal
+      };
+      await semproService.saveRegistration(newReg);
+      
+      // Artificial delay for DB propagation
+      await new Promise(r => setTimeout(r, 1000));
+      
+      const refreshed = await semproService.getRegistrationByStudent(userId);
+      setRegistration(refreshed || newReg);
+    } catch (err: any) {
+      console.error('Enroll error:', err);
+      setError(err.message || 'Gagal mengirim pendaftaran. Periksa koneksi internet atau SQL Query Anda.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handlePostUpload = async (type: 'dok' | 'cat', file: File) => {
@@ -139,12 +155,16 @@ export default function SemproSection() {
                   <input type="file" className="hidden" onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0])} disabled={uploading} />
                   {uploading ? <Loader2 className="animate-spin" size={40} /> : docs.proposal ? <CheckCircle2 size={40} /> : <FileUp size={40} />}
                </label>
-               <div className="space-y-2">
-                  <h4 className="text-xl font-bold text-slate-900 italic">{docs.proposal ? 'Proposal Siap Dikirim' : 'Siap Kirim Proposal?'}</h4>
-                  <p className="text-sm text-slate-400 font-medium">
-                     {docs.proposal ? 'File PDF telah terunggah. Silakan klik tombol di bawah.' : 'Klik icon di atas untuk mengunggah proposal Anda.'}
-                  </p>
-               </div>
+               {docs.proposal && (
+                  <div className="text-[10px] font-bold text-primary bg-primary/5 px-4 py-2 rounded-lg border border-primary/20">
+                     Proposal Terdeteksi: {docs.proposal.split('/').pop()?.substring(0, 20)}...
+                  </div>
+               )}
+               {error && (
+                 <div className="p-4 bg-red-50 text-red-600 rounded-xl text-xs font-bold border border-red-100 animate-shake">
+                    {error}
+                 </div>
+               )}
                <button 
                   onClick={handleEnroll}
                   disabled={!docs.proposal || uploading}

@@ -31,32 +31,44 @@ export default function KKNSection({ type }: KKNSectionProps) {
     fetchData();
   }, [type, userId]);
 
+  const [error, setError] = useState<string | null>(null);
+
   const handleEnroll = async () => {
     if (!userId) return;
-    const newReg: KKNRegistration = {
-      id: '', // Let DB generate UUID
-      studentId: userId,
-      studentName: localStorage.getItem('user_name') || 'Student',
-      type: type,
-      status: 'PENDING',
-      docs: {
-         transkrip: false, pembayaran: false, krs: false, 
-         kesehatan: false, foto: false, pernyataan: false, izinOrtu: false
-      },
-      logbooks: [],
-      totalHours: 0
-    };
-    await kknService.saveRegistration(newReg);
     try {
-      await supabase.from('logbooks').insert({
-        user_id: userId,
-        activity: `Mendaftar KKN ${type}`,
-        is_approved: true
-      });
-    } catch (e) {
-      console.error('Log activity error:', e);
+      setError(null);
+      setLoading(true);
+      const newReg: KKNRegistration = {
+        id: '', // Let DB generate UUID
+        studentId: userId,
+        studentName: localStorage.getItem('user_name') || 'Student',
+        type: type,
+        status: 'PENDING',
+        docs: {
+           transkrip: false, pembayaran: false, krs: false, 
+           kesehatan: false, foto: false, pernyataan: false, izinOrtu: false
+        },
+        logbooks: [],
+        totalHours: 0
+      };
+      await kknService.saveRegistration(newReg);
+      try {
+        await supabase.from('logbooks').insert({
+          user_id: userId,
+          activity: `Mendaftar KKN ${type}`,
+          is_approved: true
+        });
+      } catch (e) {
+        console.error('Log activity error:', e);
+      }
+      const refreshed = await kknService.getRegistrationByStudent(userId, type);
+      setRegistration(refreshed || newReg);
+    } catch (err: any) {
+      console.error('KKN enroll error:', err);
+      setError(err.message || 'Gagal mendaftar KKN. Coba lagi.');
+    } finally {
+      setLoading(false);
     }
-    setRegistration(newReg);
   };
 
   const updateRegistration = async (updates: Partial<KKNRegistration>) => {
@@ -98,7 +110,15 @@ export default function KKNSection({ type }: KKNSectionProps) {
       </div>
 
       {!registration ? (
-        <EnrollStep onEnroll={handleEnroll} />
+        <div className="space-y-6">
+           {error && (
+             <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-xs font-bold border border-red-100 flex items-center space-x-3">
+                <AlertCircle size={16} />
+                <span>{error}</span>
+             </div>
+           )}
+           <EnrollStep onEnroll={handleEnroll} />
+        </div>
       ) : (
         <div className="space-y-10">
           <Stepper currentStatus={registration.status} />

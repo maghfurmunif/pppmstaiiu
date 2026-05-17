@@ -10,6 +10,9 @@ import { cn } from '@/src/lib/utils';
 import { Suspense, lazy, useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { kknService } from '@/src/services/kknService';
+import { semproService } from '@/src/services/semproService';
+import { skripsiService } from '@/src/services/skripsiService';
+import { supabase } from '@/src/lib/supabase';
 
 // Admin Sections
 const AdminManagement = lazy(() => import('./sections/AdminManagement'));
@@ -171,19 +174,32 @@ export default function AdminDashboard() {
 
 function AdminOverview() {
   const [statsData, setStatsData] = useState({
-    mahasiswa: 1240,
+    mahasiswa: 0,
     penelitian: 45,
     kknAktif: 0,
-    alerts: 0
+    alerts: 0,
+    semproAktif: 0,
+    skripsiAktif: 0
   });
 
   useEffect(() => {
     const fetchData = async () => {
-      const regs = await kknService.getRegistrations();
+      const [kkn, sempro, skripsi, profiles] = await Promise.all([
+        kknService.getRegistrations(),
+        semproService.getRegistrations(),
+        skripsiService.getRegistrations(),
+        supabase.from('profiles').select('id', { count: 'exact' })
+      ]);
+
       setStatsData(prev => ({
         ...prev,
-        kknAktif: regs.filter(r => r.status !== 'COMPLETED' && r.status !== 'REJECTED').length,
-        alerts: regs.filter(r => r.status.includes('PENDING') || r.status === 'SUBMITTED').length
+        mahasiswa: profiles.count || 0,
+        kknAktif: kkn.filter(r => r.status !== 'COMPLETED' && r.status !== 'REJECTED').length,
+        semproAktif: sempro.filter(r => r.status !== 'COMPLETED' && r.status !== 'REJECTED').length,
+        skripsiAktif: skripsi.filter(r => r.status !== 'COMPLETED' && r.status !== 'REJECTED').length,
+        alerts: kkn.filter(r => r.status === 'SUBMITTED').length + 
+                sempro.filter(r => r.status === 'SUBMITTED').length +
+                skripsi.filter(r => r.status === 'SUBMITTED').length
       }));
     };
     fetchData();
@@ -199,10 +215,10 @@ function AdminOverview() {
   ];
 
   const stats = [
-    { label: 'Mahasiswa', value: statsData.mahasiswa.toLocaleString(), trend: '+12%', icon: Users },
-    { label: 'Penelitian', value: statsData.penelitian.toString(), trend: '+2', icon: FlaskConical },
-    { label: 'KKN Aktif', value: statsData.kknAktif.toString(), trend: `+${statsData.kknAktif}`, icon: Activity },
-    { label: 'Alerts', value: statsData.alerts.toString(), trend: statsData.alerts > 0 ? '+!' : '0', icon: Bell },
+    { label: 'Mahasiswa', value: statsData.mahasiswa.toLocaleString(), trend: statsData.mahasiswa > 0 ? '+New' : '0', icon: Users },
+    { label: 'KKN Aktif', value: statsData.kknAktif.toString(), trend: `+${statsData.kknAktif}`, icon: Globe },
+    { label: 'Sempro Aktif', value: statsData.semproAktif.toString(), trend: `+${statsData.semproAktif}`, icon: BookOpen },
+    { label: 'Skripsi Aktif', value: statsData.skripsiAktif.toString(), trend: `+${statsData.skripsiAktif}`, icon: GraduationCap },
   ];
 
   return (
@@ -239,31 +255,49 @@ function AdminOverview() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-10">
-         <div className="lg:col-span-2 card p-10 h-[450px] flex flex-col">
-            <div className="flex justify-between items-center mb-10">
-              <h3 className="font-bold text-slate-900 italic flex items-center"><BarChart3 size={18} className="mr-2 text-primary" /> Statistik Pelaporan Digital</h3>
-              <div className="flex space-x-2">
-                {['6M', '1Y', 'ALL'].map(t => (
-                  <button key={t} className="px-3 py-1 rounded-full text-[9px] font-black border border-slate-100 text-slate-400 hover:text-primary transition-colors">{t}</button>
-                ))}
-              </div>
+         <div className="lg:col-span-2 space-y-6">
+            <h3 className="font-bold text-slate-900 italic flex items-center">
+               <Layers size={18} className="mr-2 text-primary" /> Quick Access Modules
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+               {[
+                 { label: 'Manajemen KKN', path: '/dashboard/admin/kkn', icon: Globe, color: 'hover:border-primary' },
+                 { label: 'Seminar Proposal', path: '/dashboard/admin/sempro', icon: BookOpen, color: 'hover:border-blue-500' },
+                 { label: 'Skripsi Mahasiswa', path: '/dashboard/admin/skripsi', icon: GraduationCap, color: 'hover:border-green-500' },
+                 { label: 'Penelitian Dosen', path: '/dashboard/admin/penelitian', icon: FlaskConical, color: 'hover:border-orange-500' },
+                 { label: 'Pengabdian Dosen', path: '/dashboard/admin/pengabdian', icon: HeartHandshake, color: 'hover:border-red-500' },
+                 { label: 'Dokumentasi', path: '/dashboard/admin/dokumentasi', icon: FileText, color: 'hover:border-slate-500' },
+               ].map((mod, idx) => (
+                 <Link key={idx} to={mod.path} className={cn("card p-6 flex flex-col items-center justify-center space-y-3 transition-all border-transparent border-2 shadow-sm", mod.color)}>
+                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-primary">
+                       <mod.icon size={20} />
+                    </div>
+                    <span className="text-[10px] font-black uppercase text-center tracking-tight text-slate-600">{mod.label}</span>
+                 </Link>
+               ))}
             </div>
-            <div className="flex-grow pr-4">
-               <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={data}>
-                    <defs>
-                      <linearGradient id="colorReports" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#88A47C" stopOpacity={0.2}/>
-                        <stop offset="95%" stopColor="#88A47C" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 900, fill: '#94a3b8'}} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 900, fill: '#94a3b8'}} dx={-10} />
-                    <Tooltip contentStyle={{borderRadius: '24px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontSize: '10px', fontWeight: 'bold'}} />
-                    <Area type="monotone" dataKey="reports" stroke="#88A47C" fillOpacity={1} fill="url(#colorReports)" strokeWidth={4} />
-                  </AreaChart>
-               </ResponsiveContainer>
+            
+            <div className="card p-10 h-[350px] flex flex-col">
+               <div className="flex justify-between items-center mb-10">
+                 <h3 className="font-bold text-slate-900 italic flex items-center"><BarChart3 size={18} className="mr-2 text-primary" /> Statistik Pelaporan Digital</h3>
+               </div>
+               <div className="flex-grow pr-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                     <AreaChart data={data}>
+                       <defs>
+                         <linearGradient id="colorReports" x1="0" y1="0" x2="0" y2="1">
+                           <stop offset="5%" stopColor="#88A47C" stopOpacity={0.2}/>
+                           <stop offset="95%" stopColor="#88A47C" stopOpacity={0}/>
+                         </linearGradient>
+                       </defs>
+                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 900, fill: '#94a3b8'}} dy={10} />
+                       <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 900, fill: '#94a3b8'}} dx={-10} />
+                       <Tooltip contentStyle={{borderRadius: '24px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontSize: '10px', fontWeight: 'bold'}} />
+                       <Area type="monotone" dataKey="reports" stroke="#88A47C" fillOpacity={1} fill="url(#colorReports)" strokeWidth={4} />
+                     </AreaChart>
+                  </ResponsiveContainer>
+               </div>
             </div>
          </div>
 

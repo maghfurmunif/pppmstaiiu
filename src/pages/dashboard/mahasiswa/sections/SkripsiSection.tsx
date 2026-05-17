@@ -41,18 +41,31 @@ export default function SkripsiSection() {
     }
   };
 
+  const [error, setError] = useState<string | null>(null);
+
   const handleEnroll = async (docs: any) => {
     if (!userId) return;
-    const newReg: SkripsiRegistration = {
-      id: '', // Let DB generate UUID
-      studentId: userId,
-      studentName: localStorage.getItem('user_name') || 'Student',
-      status: 'SUBMITTED',
-      registrationDocs: docs,
-      logbooks: []
-    };
-    await skripsiService.saveRegistration(newReg);
-    setRegistration(newReg);
+    try {
+      setError(null);
+      const newReg: SkripsiRegistration = {
+        id: crypto.randomUUID(), 
+        studentId: userId,
+        studentName: localStorage.getItem('user_name') || 'Student',
+        status: 'SUBMITTED',
+        registrationDocs: docs,
+        logbooks: []
+      };
+      await skripsiService.saveRegistration(newReg);
+      
+      // Artificial delay for DB propagation
+      await new Promise(r => setTimeout(r, 1000));
+      
+      const refreshed = await skripsiService.getRegistrationByStudent(userId);
+      setRegistration(refreshed || newReg);
+    } catch (err: any) {
+      console.error('Skripsi enroll error:', err);
+      setError(err.message || 'Gagal mendaftar skripsi. Pastikan tabel skripsi_registrations sudah dibuat via SQL.');
+    }
   };
 
   const updateRegistration = async (updates: Partial<SkripsiRegistration>) => {
@@ -91,7 +104,15 @@ export default function SkripsiSection() {
       </div>
 
       {!registration ? (
-        <SkripsiEnrollment onEnroll={handleEnroll} />
+        <div className="space-y-6">
+           {error && (
+             <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-xs font-bold border border-red-100 flex items-center space-x-3">
+                <AlertCircle size={16} />
+                <span>{error}</span>
+             </div>
+           )}
+           <SkripsiEnrollment onEnroll={handleEnroll} />
+        </div>
       ) : (
         <div className="space-y-10">
           <AnimatePresence mode="wait">

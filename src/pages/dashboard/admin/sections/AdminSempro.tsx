@@ -58,7 +58,7 @@ export default function AdminSempro() {
                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Status: {selectedReg.status}</p>
                 </div>
 
-                 {selectedReg.status === 'ENROLL' && (
+                 {selectedReg.status === 'SUBMITTED' && (
                   <div className="card p-8 space-y-6">
                      <h3 className="font-bold italic">Review Proposal Awal</h3>
                      {selectedReg.proposalFile && (
@@ -78,7 +78,16 @@ export default function AdminSempro() {
                           }}
                           className="btn-primary flex-grow"
                         >Terima Proposal</button>
-                        <button className="btn-primary bg-red-600 flex-grow">Tolak</button>
+                        <button 
+                          onClick={async () => {
+                            const reason = prompt('Alasan penolakan:');
+                            if (!reason) return;
+                            const updated = { ...selectedReg, status: 'REJECTED' as const, rejectionReason: reason };
+                            await semproService.saveRegistration(updated);
+                            refresh();
+                          }}
+                          className="btn-primary bg-red-600 flex-grow"
+                        >Tolak</button>
                      </div>
                   </div>
                 )}

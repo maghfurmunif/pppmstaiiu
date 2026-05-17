@@ -44,10 +44,18 @@ export const skripsiService = {
     const profileMap = (profiles || []).reduce((acc: any, p) => ({ ...acc, [p.id]: p.full_name }), {});
 
     return regs.map(r => ({
-      ...r,
+      id: r.id,
       studentId: r.student_id,
       studentName: profileMap[r.student_id] || 'Student',
-      logbooks: r.logbooks || []
+      status: r.status,
+      rejectionReason: r.rejection_reason,
+      registrationDocs: r.registration_docs,
+      advisor: r.advisor,
+      logbooks: r.logbooks || [],
+      finalDocs: r.final_docs,
+      examSchedule: r.exam_schedule,
+      afterExamDocs: r.after_exam_docs,
+      grades: r.grades
     }));
   },
 
@@ -66,10 +74,18 @@ export const skripsiService = {
     const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', studentId).maybeSingle();
 
     return {
-      ...reg,
+      id: reg.id,
       studentId: reg.student_id,
       studentName: profile?.full_name || 'Student',
-      logbooks: reg.logbooks || []
+      status: reg.status,
+      rejectionReason: reg.rejection_reason,
+      registrationDocs: reg.registration_docs,
+      advisor: reg.advisor,
+      logbooks: reg.logbooks || [],
+      finalDocs: reg.final_docs,
+      examSchedule: reg.exam_schedule,
+      afterExamDocs: reg.after_exam_docs,
+      grades: reg.grades
     };
   },
 
@@ -77,13 +93,13 @@ export const skripsiService = {
     const dbPayload: any = {
       student_id: reg.studentId,
       status: reg.status,
-      rejectionReason: reg.rejectionReason,
-      registrationDocs: reg.registrationDocs,
+      rejection_reason: reg.rejectionReason,
+      registration_docs: reg.registrationDocs,
       advisor: reg.advisor,
       logbooks: reg.logbooks,
-      finalDocs: reg.finalDocs,
-      examSchedule: reg.examSchedule,
-      afterExamDocs: reg.afterExamDocs,
+      final_docs: reg.finalDocs,
+      exam_schedule: reg.examSchedule,
+      after_exam_docs: reg.afterExamDocs,
       grades: reg.grades,
       updated_at: new Date().toISOString()
     };
@@ -94,7 +110,7 @@ export const skripsiService = {
 
     const { error } = await supabase
       .from('skripsi_registrations')
-      .upsert(dbPayload);
+      .upsert(dbPayload, { onConflict: 'student_id' });
 
     if (error) {
       console.error('Skripsi Upsert Error:', error);

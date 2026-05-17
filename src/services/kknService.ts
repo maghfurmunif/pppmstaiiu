@@ -56,11 +56,21 @@ export const kknService = {
     const profileMap = (profiles || []).reduce((acc: any, p) => ({ ...acc, [p.id]: p.full_name }), {});
 
     return regs.map(r => ({
-      ...r,
+      id: r.id,
       studentId: r.student_id,
       studentName: profileMap[r.student_id] || 'Student',
+      type: r.type,
+      status: r.status,
+      rejectionReason: r.rejection_reason,
+      docs: r.docs,
+      info: r.info,
+      surveyDocs: r.survey_docs,
+      rkl: r.rkl,
+      deployment: r.deployment,
       logbooks: r.logbooks || [],
-      totalHours: r.totalHours || 0
+      totalHours: r.total_hours || 0,
+      lpk: r.lpk,
+      grades: r.grades
     }));
   },
 
@@ -80,9 +90,21 @@ export const kknService = {
     const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', studentId).maybeSingle();
 
     return {
-      ...reg,
+      id: reg.id,
       studentId: reg.student_id,
-      studentName: profile?.full_name || 'Student'
+      studentName: profile?.full_name || 'Student',
+      type: reg.type,
+      status: reg.status,
+      rejectionReason: reg.rejection_reason,
+      docs: reg.docs,
+      info: reg.info,
+      surveyDocs: reg.survey_docs,
+      rkl: reg.rkl,
+      deployment: reg.deployment,
+      logbooks: reg.logbooks || [],
+      totalHours: reg.total_hours || 0,
+      lpk: reg.lpk,
+      grades: reg.grades
     };
   },
 
@@ -92,14 +114,14 @@ export const kknService = {
       student_id: reg.studentId,
       type: reg.type,
       status: reg.status,
-      rejectionReason: reg.rejectionReason,
+      rejection_reason: reg.rejectionReason,
       docs: reg.docs,
       info: reg.info,
-      surveyDocs: reg.surveyDocs,
+      survey_docs: reg.surveyDocs,
       rkl: reg.rkl,
       deployment: reg.deployment,
       logbooks: reg.logbooks,
-      totalHours: reg.totalHours,
+      total_hours: reg.totalHours,
       lpk: reg.lpk,
       grades: reg.grades,
       updated_at: new Date().toISOString()
@@ -111,7 +133,7 @@ export const kknService = {
 
     const { error } = await supabase
       .from('kkn_registrations')
-      .upsert(dbPayload);
+      .upsert(dbPayload, { onConflict: 'student_id,type' });
 
     if (error) {
       console.error('Detailed Upsert Error:', error);

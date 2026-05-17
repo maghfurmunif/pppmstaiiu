@@ -46,9 +46,16 @@ export const semproService = {
     }, {});
 
     return regs.map(r => ({
-      ...r,
+      id: r.id,
       studentId: r.student_id,
-      studentName: profileMap[r.student_id] || 'Student'
+      studentName: profileMap[r.student_id] || 'Student',
+      status: r.status,
+      rejectionReason: r.rejection_reason,
+      proposalFile: r.proposal_file,
+      schedule: r.schedule,
+      proof: r.proof,
+      grade: r.grade,
+      postSeminar: r.post_seminar
     }));
   },
 
@@ -75,9 +82,16 @@ export const semproService = {
       .maybeSingle();
 
     return {
-      ...reg,
+      id: reg.id,
       studentId: reg.student_id,
-      studentName: profile?.full_name || 'Student'
+      studentName: profile?.full_name || 'Student',
+      status: reg.status,
+      rejectionReason: reg.rejection_reason,
+      proposalFile: reg.proposal_file,
+      schedule: reg.schedule,
+      proof: reg.proof,
+      grade: reg.grade,
+      postSeminar: reg.post_seminar
     };
   },
 
@@ -85,11 +99,12 @@ export const semproService = {
     const dbPayload: any = {
       student_id: reg.studentId,
       status: reg.status,
-      rejectionReason: reg.rejectionReason,
-      proposalFile: reg.proposalFile,
+      rejection_reason: reg.rejectionReason,
+      proposal_file: reg.proposalFile,
       schedule: reg.schedule,
       proof: reg.proof,
       grade: reg.grade,
+      post_seminar: reg.postSeminar,
       updated_at: new Date().toISOString()
     };
 
@@ -99,7 +114,7 @@ export const semproService = {
 
     const { error } = await supabase
       .from('sempro_registrations')
-      .upsert(dbPayload);
+      .upsert(dbPayload, { onConflict: 'student_id' });
 
     if (error) {
        console.error('Sempro Upsert Error:', error);

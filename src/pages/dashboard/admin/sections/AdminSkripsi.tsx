@@ -89,17 +89,34 @@ export default function AdminSkripsi() {
                                const updated = { 
                                  ...selectedReg, 
                                  status: 'APPROVED' as const,
-                                 advisor: { name: (document.getElementById('adv') as HTMLInputElement).value }
+                                 advisor: { name: (document.getElementById('adv') as HTMLInputElement).value || 'Dosen Pembimbing' }
                                };
                                await skripsiService.saveRegistration(updated);
                                refresh();
                              }}
                              className="btn-primary flex-grow"
                            >Terima & Plot Pembimbing</button>
-                           <button className="btn-primary bg-red-600 flex-grow">Tolak</button>
+                           <button 
+                             onClick={async () => {
+                               const reason = prompt('Alasan penolakan:');
+                               if (!reason) return;
+                               const updated = { ...selectedReg, status: 'REJECTED' as const, rejectionReason: reason };
+                               await skripsiService.saveRegistration(updated);
+                               refresh();
+                             }}
+                             className="btn-primary bg-red-600 flex-grow"
+                           >Tolak</button>
                         </div>
                      </div>
                   </div>
+                )}
+
+                {selectedReg.status === 'APPROVED' && (
+                   <div className="card p-20 text-center space-y-4">
+                      <Clock className="text-primary opacity-20 mx-auto" size={48} />
+                      <h3 className="font-bold text-slate-900 italic">Pendaftaran Disetujui</h3>
+                      <p className="text-slate-400 text-sm">Menunggu mahasiswa menyetujui dosen pembimbing ({selectedReg.advisor?.name}) dan memulai bimbingan.</p>
+                   </div>
                 )}
 
                 {selectedReg.status === 'PROGRESS' && (

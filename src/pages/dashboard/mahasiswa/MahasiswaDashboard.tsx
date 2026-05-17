@@ -184,11 +184,107 @@ function DashboardOverview() {
     fetchActivities();
   }, [userId]);
 
-  const stats = [
+  const [stats, setStats] = useState([
     { label: 'KKN Reguler', status: 'Cek Progress', color: 'primary', value: 0, icon: Users, path: '/dashboard/mahasiswa/kkn' },
     { label: 'KKN Mandiri', status: 'Cek Progress', color: 'slate', value: 0, icon: Users, path: '/dashboard/mahasiswa/kkn-mandiri' },
     { label: 'Tugas Akhir', status: 'Sedang Berjalan', color: 'slate', value: 0, icon: GraduationCap, path: '/dashboard/mahasiswa/skripsi' },
-  ];
+  ]);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      if (!userId) return;
+      
+      const { data: kknReg } = await supabase
+        .from('kkn_registrations')
+        .select('*')
+        .eq('student_id', userId)
+        .eq('type', 'REGULER')
+        .maybeSingle();
+      
+      const { data: kknMan } = await supabase
+        .from('kkn_registrations')
+        .select('*')
+        .eq('student_id', userId)
+        .eq('type', 'MANDIRI')
+        .maybeSingle();
+
+      const { data: skripsi } = await supabase
+        .from('skripsi_registrations')
+        .select('*')
+        .eq('student_id', userId)
+        .maybeSingle();
+
+      const calculateKKNProgress = (reg: any) => {
+        if (!reg) return 0;
+        const statusOrder: Record<string, number> = {
+          'PENDING': 15,
+          'SUBMITTED': 30,
+          'APPROVED': 40,
+          'SURVEY': 50,
+          'RKL': 60,
+          'DEPLOYMENT': 75,
+          'LOGBOOK': 85,
+          'LPK': 90,
+          'GRADING': 95,
+          'COMPLETED': 100
+        };
+        
+        let progress = 0;
+        const baseStatus = reg.status?.replace('_PENDING', '');
+        if (statusOrder[baseStatus]) {
+          progress = statusOrder[baseStatus];
+        } else {
+          // If in PENDING, calculate based on uploaded docs
+          let count = 0;
+          const docs = reg.docs || {};
+          const fields = ['transkrip', 'pembayaran', 'krs', 'kesehatan', 'foto', 'pernyataan', 'izinOrtu'];
+          fields.forEach(f => { if (docs[f]) count++; });
+          progress = Math.round((count / fields.length) * 15);
+        }
+        return progress;
+      };
+
+      setStats([
+        { 
+          label: 'KKN Reguler', 
+          status: kknReg?.status || 'Cek Progress', 
+          color: kknReg ? 'primary' : 'slate', 
+          value: calculateKKNProgress(kknReg), 
+          icon: Users, 
+          path: '/dashboard/mahasiswa/kkn' 
+        },
+        { 
+          label: 'KKN Mandiri', 
+          status: kknMan?.status || 'Cek Progress', 
+          color: kknMan ? 'primary' : 'slate', 
+          value: calculateKKNProgress(kknMan), 
+          icon: Users, 
+          path: '/dashboard/mahasiswa/kkn-mandiri' 
+        },
+        { 
+          label: 'Tugas Akhir', 
+          status: skripsi?.status || 'Sedang Berjalan', 
+          color: skripsi ? 'primary' : 'slate', 
+          value: (() => {
+            if (!skripsi) return 0;
+            const statusMap: Record<string, number> = {
+              'ENROLL': 10,
+              'SUBMITTED': 25,
+              'APPROVED': 40,
+              'PROGRESS': 60,
+              'DOCS_SUBMITTED': 80,
+              'GRADING': 90,
+              'COMPLETED': 100
+            };
+            return statusMap[skripsi.status] || 0;
+          })(), 
+          icon: GraduationCap, 
+          path: '/dashboard/mahasiswa/skripsi' 
+        },
+      ]);
+    };
+    loadStats();
+  }, [userId]);
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
