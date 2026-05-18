@@ -2,21 +2,55 @@
 import { supabase } from '@/src/lib/supabase';
 import { AcademicStatus } from './semproService';
 
+export type PenelitianStatus = 
+  | 'ENROLL' 
+  | 'SUBMITTED' 
+  | 'REJECTED' 
+  | 'APPROVED' 
+  | 'SEMPRO_SUBMITTED' 
+  | 'PROGRESS' 
+  | 'RESULT_SUBMITTED' 
+  | 'RESULT_APPROVED'
+  | 'REVISION_SUBMITTED'
+  | 'PUBLICATION' 
+  | 'COMPLETED';
+
 export interface PenelitianRegistration {
   id: string;
   dosenId: string;
   dosenName: string;
-  status: AcademicStatus;
+  status: PenelitianStatus;
   rejectionReason?: string;
   proposalFile?: string;
-  semproInfo?: any;
-  semproProof?: any;
+  semproInfo?: {
+    lokasi: string;
+    tanggal: string;
+    pukul: string;
+    catatan?: string;
+  };
+  semproProof?: {
+    dokumentasi: string[]; // min 3
+    catatan: string; // min 1 photo
+  };
   logbooks: PenelitianLogbook[];
   resultFile?: string;
-  finalSemproInfo?: any;
-  finalSemproProof?: any;
+  finalSemproInfo?: { // Research Seminar
+    tanggal: string;
+    pukul: string;
+    lokasi: string;
+    panelis: string;
+    peserta: string;
+    infoLain?: string;
+  };
+  finalSemproProof?: {
+    dokumentasi: string[]; // min 3
+    catatan: string; // min 1 photo
+  };
   finalRevisionFile?: string;
-  publication?: any;
+  publication?: {
+    type: 'MANDIRI' | 'PPPM';
+    method?: string; // Jurnal, Buku, Prosiding, Lainnya
+  };
 }
 
 export interface PenelitianLogbook {

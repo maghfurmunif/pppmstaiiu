@@ -259,7 +259,7 @@ function SkripsiEnrollment({ onEnroll }: { onEnroll: (docs: any) => void }) {
     { id: 'administrasi', label: 'Bukti Lunas Administrasi' },
   ];
 
-  const allReady = Object.values(docs).every(v => v !== '');
+  const allReady = Object.values(docs).every(v => v && v !== '');
 
   return (
     <div className="grid lg:grid-cols-2 gap-10">
@@ -268,39 +268,46 @@ function SkripsiEnrollment({ onEnroll }: { onEnroll: (docs: any) => void }) {
            <h3 className="text-2xl font-black italic">Syarat Akademik</h3>
            <ul className="space-y-4">
               {requirements.map(s => (
-                <li key={s.id} className="flex flex-col space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-400">{s.label}</span>
-                    <div className={cn(
-                      "w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center",
-                      docs[s.id] ? "bg-primary border-primary text-white" : "border-white/10"
-                    )}>
-                      {docs[s.id] && <CheckCircle2 size={14} />}
-                    </div>
-                  </div>
+                <li key={s.id} className="group relative">
                   <label className={cn(
-                    "flex items-center justify-center p-4 rounded-xl border-2 border-dashed transition-all cursor-pointer",
-                    docs[s.id] ? "border-primary/50 bg-primary/5" : "border-white/10 hover:border-white/20"
+                    "flex flex-col space-y-3 p-5 rounded-2xl border-2 border-dashed transition-all cursor-pointer",
+                    docs[s.id] ? "border-primary/50 bg-primary/10" : "border-white/10 hover:border-white/30"
                   )}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-slate-100 group-hover:text-primary transition-colors">{s.label}</span>
+                      <div className={cn(
+                        "w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center shadow-lg",
+                        docs[s.id] ? "bg-primary border-primary text-white" : "border-white/20"
+                      )}>
+                        {docs[s.id] && <CheckCircle2 size={16} />}
+                      </div>
+                    </div>
+                    
                     <input 
                       type="file" 
                       className="hidden" 
                       onChange={e => e.target.files?.[0] && handleDocUpload(s.id, e.target.files[0])}
                       disabled={!!uploading}
                     />
-                    {uploading === s.id ? (
-                      <Loader2 className="animate-spin text-primary" size={16} />
-                    ) : docs[s.id] ? (
-                      <div className="flex items-center space-x-2 text-[10px] font-black text-primary uppercase">
-                        <CheckCircle2 size={12} />
-                        <span>Terunggah</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                        <FileUp size={12} />
-                        <span>Pilih Berkas</span>
-                      </div>
-                    )}
+                    
+                    <div className="flex items-center space-x-3">
+                       {uploading === s.id ? (
+                         <div className="flex items-center space-x-2 text-[10px] font-black text-primary animate-pulse">
+                            <Loader2 className="animate-spin" size={14} />
+                            <span>MENGUNGGAH...</span>
+                         </div>
+                       ) : docs[s.id] ? (
+                         <div className="flex items-center space-x-2 text-[10px] font-black text-primary uppercase">
+                            <CheckCircle2 size={12} />
+                            <span>File Terverifikasi</span>
+                         </div>
+                       ) : (
+                         <div className="flex items-center space-x-2 text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-300">
+                            <FileUp size={14} />
+                            <span>Pilih Berkas Sekarang</span>
+                         </div>
+                       )}
+                    </div>
                   </label>
                 </li>
               ))}

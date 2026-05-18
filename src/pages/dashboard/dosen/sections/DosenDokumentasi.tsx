@@ -144,7 +144,38 @@ export default function DosenDokumentasiSection() {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-2">Penulis Tambahan (Opsional)</label>
                     <input name="penulis" className="input-field" placeholder="Ahmad, Budi, etc..." />
                  </div>
-                 <button type="submit" className="w-full btn-primary py-5 shadow-xl font-black italic">SIMPAN KE DOKUMENTASI DIGITAL</button>
+                 
+                 <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-2">Unggah Berkas Karya (PDF/Image)</label>
+                    <label className={cn(
+                       "flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer",
+                       fileUrl ? "border-primary/50 bg-primary/5" : "border-slate-100 hover:border-primary/30"
+                    )}>
+                       <input 
+                         type="file" 
+                         className="hidden" 
+                         onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+                         disabled={uploadingFile}
+                       />
+                       {uploadingFile ? (
+                          <Loader2 size={24} className="animate-spin text-primary" />
+                       ) : fileUrl ? (
+                          <div className="flex items-center space-x-2 text-primary font-bold">
+                             <CheckCircle2 size={20} />
+                             <span className="text-[10px] uppercase tracking-widest">Berkas Terlampir</span>
+                          </div>
+                       ) : (
+                          <div className="flex flex-col items-center space-y-1 text-slate-400">
+                             <FileUp size={24} />
+                             <span className="text-[9px] font-black uppercase tracking-widest">Pilih Berkas</span>
+                          </div>
+                       )}
+                    </label>
+                 </div>
+
+                 <button type="submit" disabled={saving || uploadingFile} className="w-full btn-primary py-5 shadow-xl font-black italic disabled:opacity-50">
+                    {saving ? 'MENYIMPAN...' : 'SIMPAN KE DOKUMENTASI DIGITAL'}
+                 </button>
               </div>
            </form>
         </div>
