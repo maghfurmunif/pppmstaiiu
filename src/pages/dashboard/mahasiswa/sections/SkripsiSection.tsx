@@ -175,7 +175,13 @@ export default function SkripsiSection() {
                  <div className="max-w-2xl mx-auto space-y-8">
                     <h4 className="text-center font-bold text-slate-900 italic">Dokumentasi & Revisi Pasca-Ujian</h4>
                     <div className="grid grid-cols-2 gap-4">
-                       <div onClick={() => updateRegistration({ status: 'COMPLETED' })} className="card p-8 border-dashed flex flex-col items-center justify-center space-y-3 cursor-pointer hover:bg-primary/5 transition-all group">
+                       <div onClick={async () => {
+                              const confirmText = confirm('Konfirmasi bahwa Sidang Munaqosyah telah SELESAI dilaksanakan? Status akan dikirim ke Admin untuk penilaian akhir.');
+                              if (confirmText) {
+                                 await updateRegistration({ status: 'COMPLETED' });
+                                 alert('Status diperbarui. Tunggu Admin memberikan nilai akhir.');
+                              }
+                           }} className="card p-8 border-dashed flex flex-col items-center justify-center space-y-3 cursor-pointer hover:bg-primary/5 transition-all group">
                           <Camera className="text-slate-300 group-hover:text-primary" />
                           <span className="text-[10px] font-black text-slate-400 group-hover:text-primary uppercase tracking-widest">Upload Bukti Sidang</span>
                        </div>
@@ -188,14 +194,14 @@ export default function SkripsiSection() {
               </div>
             )}
 
-            {registration.status === 'COMPLETED' && registration.grades && (
+            {registration.status === 'COMPLETED' && registration.grades && registration.grades.total !== undefined && (
               <div className="max-w-4xl mx-auto space-y-10">
                  <div className="card p-12 bg-slate-900 text-white text-center relative overflow-hidden">
                     <div className="relative z-10 space-y-4">
                        <CheckCircle2 size={64} className="mx-auto text-primary" />
                        <h2 className="text-4xl font-black italic tracking-tighter">SKRIPSI SELESAI</h2>
                        <div className="inline-block px-10 py-3 bg-primary text-white rounded-full font-black text-3xl italic shadow-2xl">
-                         {registration.grades.gradeText} ({registration.grades.total.toFixed(0)})
+                         {registration.grades.gradeText} ({Number(registration.grades.total || 0).toFixed(0)})
                        </div>
                     </div>
                  </div>
@@ -214,6 +220,15 @@ export default function SkripsiSection() {
                     </div>
                  </div>
               </div>
+            )}
+            {registration.status === 'COMPLETED' && (!registration.grades || registration.grades.total === undefined) && (
+               <div className="card p-20 text-center space-y-6">
+                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                     <Clock className="text-primary animate-pulse" size={40} />
+                  </div>
+                  <h3 className="text-2xl font-black italic uppercase tracking-tighter">Dalam Penilaian Akhir</h3>
+                  <p className="text-slate-500 font-medium max-w-md mx-auto">Sidang Munaqosyah telah selesai. Admin sedang menginput skor akhir skripsi Anda. Mohon cek kembali secara berkala.</p>
+               </div>
             )}
            {registration.status === 'REJECTED' && (
               <div className="card p-12 border-red-200 bg-red-50 text-center space-y-6">

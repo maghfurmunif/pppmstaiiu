@@ -281,8 +281,8 @@ function AdminOverview() {
                <div className="flex justify-between items-center mb-10">
                  <h3 className="font-bold text-slate-900 italic flex items-center"><BarChart3 size={18} className="mr-2 text-primary" /> Statistik Pelaporan Digital</h3>
                </div>
-               <div className="flex-grow pr-4">
-                  <ResponsiveContainer width="100%" height="100%">
+               <div className="flex-grow pr-4 relative min-h-0">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                      <AreaChart data={data}>
                        <defs>
                          <linearGradient id="colorReports" x1="0" y1="0" x2="0" y2="1">

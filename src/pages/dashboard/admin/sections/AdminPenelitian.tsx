@@ -306,7 +306,7 @@ function SemproProofAction({ reg, onAction }: { reg: PenelitianRegistration, onA
        </div>
 
        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {reg.semproProof?.dokumentasi.map((url, i) => (
+          {(reg.semproProof?.dokumentasi || []).map((url, i) => (
             <a key={i} href={url} target="_blank" className="aspect-square rounded-xl overflow-hidden border border-slate-100 group relative">
                <img src={url} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
@@ -504,7 +504,7 @@ function FinalSemproProofAction({ reg, onAction }: { reg: PenelitianRegistration
        </div>
 
        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {reg.finalSemproProof?.dokumentasi.map((url, i) => (
+          {(reg.finalSemproProof?.dokumentasi || []).map((url, i) => (
             <a key={i} href={url} target="_blank" className="aspect-square rounded-xl overflow-hidden border border-slate-100 group relative">
                <img src={url} className="w-full h-full object-cover" />
                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
