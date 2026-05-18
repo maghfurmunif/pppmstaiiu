@@ -13,23 +13,52 @@ import { penelitianService, PenelitianRegistration, PenelitianLogbook } from '@/
 export default function PenelitianDosen() {
   const [registration, setRegistration] = useState<PenelitianRegistration | null>(null);
   const [loading, setLoading] = useState(true);
-  const dosenId = 'dosen_123';
+  const userId = localStorage.getItem('user_id');
 
   useEffect(() => {
-    setRegistration(penelitianService.getRegistrationByDosen(dosenId));
-    setLoading(false);
-  }, []);
-
-  const handleEnroll = () => {
-    const newReg: PenelitianRegistration = {
-      id: '', // Let DB generate UUID
-      dosenId,
-      dosenName: localStorage.getItem('user_name') || 'Dosen Academic',
-      status: 'ENROLL',
-      logbooks: []
+    const fetchData = async () => {
+      if (!userId) return;
+      const data = await penelitianService.getRegistrationByDosen(userId);
+      setRegistration(data);
+      setLoading(false);
     };
-    penelitianService.saveRegistration(newReg);
-    setRegistration(newReg);
+    fetchData();
+  }, [userId]);
+
+  const handleEnroll = async () => {
+    if (!userId) return;
+    setLoading(true);
+    try {
+      const newReg: PenelitianRegistration = {
+        id: crypto.randomUUID(), 
+        dosenId: userId,
+        dosenName: localStorage.getItem('user_name') || 'Dosen Academic',
+        status: 'ENROLL',
+        logbooks: []
+      };
+      await penelitianService.saveRegistration(newReg);
+      setRegistration(newReg);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [uploading, setUploading] = useState(false);
+  const handleProposalUpload = async (file: File) => {
+    try {
+      setUploading(true);
+      const { uploadToCloudinary } = await import('@/src/lib/cloudinary');
+      const url = await uploadToCloudinary(file);
+      if (url) {
+        updateRegistration({ proposalFile: url });
+      }
+    } catch (error) {
+      console.error('Proposal upload failed:', error);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const updateRegistration = (updates: Partial<PenelitianRegistration>) => {
@@ -79,9 +108,40 @@ export default function PenelitianDosen() {
                  <div className="card p-10 bg-slate-900 text-white space-y-6">
                     <h3 className="text-2xl font-black italic">Persyaratan Proposal</h3>
                     <p className="text-slate-400 text-sm leading-relaxed">Proposal harus mencakup Latar Belakang, Metodologi, RAB, dan Luaran yang dijanjikan. Admin akan meninjau kelayakan teknis dan anggaran.</p>
+                    
+                    <div className="space-y-4">
+                       <p className="text-[10px] font-black uppercase text-primary tracking-[0.2em]">Upload Berkas Proposal (.PDF)</p>
+                       <label className={cn(
+                          "flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed transition-all cursor-pointer",
+                          registration.proposalFile ? "border-primary/50 bg-primary/10" : "border-white/10 hover:border-white/20"
+                       )}>
+                          <input 
+                            type="file" 
+                            className="hidden" 
+                            accept=".pdf"
+                            onChange={e => e.target.files?.[0] && handleProposalUpload(e.target.files[0])}
+                            disabled={uploading}
+                          />
+                          {uploading ? (
+                             <Loader2 size={32} className="animate-spin text-primary" />
+                          ) : registration.proposalFile ? (
+                             <div className="flex flex-col items-center space-y-2">
+                                <CheckCircle2 size={32} className="text-primary" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Proposal Terunggah</span>
+                             </div>
+                          ) : (
+                             <div className="flex flex-col items-center space-y-2 text-slate-500">
+                                <FileUp size={32} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Pilih Berkas PDF</span>
+                             </div>
+                          )}
+                       </label>
+                    </div>
+
                     <button 
+                      disabled={!registration.proposalFile || uploading}
                       onClick={() => updateRegistration({ status: 'SUBMITTED' })}
-                      className="w-full py-4 bg-primary text-white rounded-xl font-black text-xs uppercase tracking-widest"
+                      className="w-full py-4 bg-primary text-white rounded-xl font-black text-xs uppercase tracking-widest disabled:opacity-20"
                     >Kirim Proposal Sekarang</button>
                  </div>
               </div>

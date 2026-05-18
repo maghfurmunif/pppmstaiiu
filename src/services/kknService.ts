@@ -131,6 +131,7 @@ export const kknService = {
       dbPayload.id = reg.id;
     }
 
+    // Try to ensure idempotent upsert by prioritizing student_id+type if possible
     const { error } = await supabase
       .from('kkn_registrations')
       .upsert(dbPayload, { onConflict: 'student_id,type' });

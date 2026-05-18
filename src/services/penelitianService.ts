@@ -85,15 +85,15 @@ export const penelitianService = {
     const dbPayload: any = {
       dosen_id: reg.dosenId,
       status: reg.status,
-      rejectionReason: reg.rejectionReason,
-      proposalFile: reg.proposalFile,
-      semproInfo: reg.semproInfo,
-      semproProof: reg.semproProof,
+      rejection_reason: reg.rejectionReason,
+      proposal_file: reg.proposalFile,
+      sempro_info: reg.semproInfo,
+      sempro_proof: reg.semproProof,
       logbooks: reg.logbooks,
-      resultFile: reg.resultFile,
-      finalSemproInfo: reg.finalSemproInfo,
-      finalSemproProof: reg.finalSemproProof,
-      finalRevisionFile: reg.finalRevisionFile,
+      result_file: reg.resultFile,
+      final_sempro_info: reg.finalSemproInfo,
+      final_sempro_proof: reg.finalSemproProof,
+      final_revision_file: reg.finalRevisionFile,
       publication: reg.publication,
       updated_at: new Date().toISOString()
     };
@@ -104,7 +104,7 @@ export const penelitianService = {
 
     const { error } = await supabase
       .from('penelitian_registrations')
-      .upsert(dbPayload);
+      .upsert(dbPayload, { onConflict: 'dosen_id' });
 
     if (error) {
        console.error('Penelitian Upsert Error:', error);
@@ -122,19 +122,35 @@ export const penelitianService = {
       return [];
     }
     return (data || []).map(d => ({
-      ...d,
-      dosenId: d.dosen_id
+      id: d.id,
+      dosenId: d.dosen_id,
+      jenisKarya: d.jenis_karya,
+      judul: d.judul,
+      tanggal: d.tanggal,
+      isbnIssn: d.isbn_issn,
+      penulisTambahan: d.penulis_tambahan,
+      penerbit: d.penerbit,
+      platform: d.platform,
+      fileUrl: d.file_url
     }));
   },
 
   saveDokumentasi: async (doc: DosenDokumentasi) => {
-    const { dosenId, ...rest } = doc;
+    const dbPayload = {
+      id: doc.id,
+      dosen_id: doc.dosenId,
+      jenis_karya: doc.jenisKarya,
+      judul: doc.judul,
+      tanggal: doc.tanggal,
+      isbn_issn: doc.isbnIssn,
+      penulis_tambahan: doc.penulisTambahan,
+      penerbit: doc.penerbit,
+      platform: doc.platform,
+      file_url: doc.fileUrl
+    };
     const { error } = await supabase
       .from('dosen_dokumentasi')
-      .insert({ 
-        ...rest, 
-        dosen_id: dosenId 
-      });
+      .upsert(dbPayload);
     if (error) throw error;
   }
 };

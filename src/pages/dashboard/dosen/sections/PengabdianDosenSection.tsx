@@ -23,19 +23,34 @@ export default function PengabdianDosenSection() {
     fetchData();
   }, [userId]);
 
+  const [error, setError] = useState<string | null>(null);
+
   const handleEnroll = async () => {
     if (!userId) return;
-    const newReg: PengabdianRegistration = {
-      id: '', // Let DB generate UUID
-      dosenId: userId,
-      dosenName: localStorage.getItem('user_name') || 'Dosen',
-      status: 'SUBMITTED',
-      docs: { suratTugas: true, proposal: true, kerjasama: true },
-      logbooks: [],
-      totalHours: 0
-    };
-    await pengabdianService.saveRegistration(newReg);
-    setRegistration(newReg);
+    try {
+      setError(null);
+      setLoading(true);
+      const newReg: PengabdianRegistration = {
+        id: crypto.randomUUID(), 
+        dosenId: userId,
+        dosenName: localStorage.getItem('user_name') || 'Dosen',
+        status: 'SUBMITTED',
+        docs: { suratTugas: true, proposal: true, kerjasama: true },
+        logbooks: [],
+        totalHours: 0
+      };
+      await pengabdianService.saveRegistration(newReg);
+      
+      // Delay for cache
+      await new Promise(r => setTimeout(r, 1000));
+      const refreshed = await pengabdianService.getRegistrationByDosen(userId);
+      setRegistration(refreshed || newReg);
+    } catch (err: any) {
+      console.error('Pengabdian enrollment error:', err);
+      setError('Gagal mengajukan pengabdian. Pastikan tabel pengabdian_registrations sudah ada.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) return <div className="flex items-center justify-center p-20"><Loader2 className="animate-spin text-primary" /></div>;
@@ -60,7 +75,20 @@ export default function PengabdianDosenSection() {
            <HeartHandshake size={48} className="text-primary mx-auto" />
            <h2 className="text-3xl font-bold italic">Mulai Program Pengabdian</h2>
            <p className="text-slate-500">Ajukan program pengabdian Anda untuk mendapatkan Surat Tugas dan Monitoring berkala.</p>
-           <button onClick={handleEnroll} className="btn-primary px-12 py-5 uppercase tracking-widest text-xs font-black">Ajukan Pengabdian</button>
+           
+           {error && (
+             <div className="p-4 bg-red-50 text-red-600 rounded-xl text-xs font-bold border border-red-100 italic">
+               {error}
+             </div>
+           )}
+
+           <button 
+             onClick={handleEnroll} 
+             disabled={loading}
+             className="btn-primary px-12 py-5 uppercase tracking-widest text-xs font-black disabled:opacity-20"
+           >
+             {loading ? 'Memproses...' : 'Ajukan Pengabdian'}
+           </button>
         </div>
       ) : (
         <div className="space-y-10">

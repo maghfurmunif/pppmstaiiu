@@ -233,11 +233,33 @@ export default function SkripsiSection() {
 }
 
 function SkripsiEnrollment({ onEnroll }: { onEnroll: (docs: any) => void }) {
-  const [docs, setDocs] = useState({
-     sks: false, ipk: false, nilaiMataKuliah: false, administrasi: false
+  const [docs, setDocs] = useState<Record<string, string>>({
+     sks: '', ipk: '', nilaiMataKuliah: '', administrasi: ''
   });
+  const [uploading, setUploading] = useState<string | null>(null);
   
-  const allReady = Object.values(docs).every(v => v);
+  const handleDocUpload = async (id: string, file: File) => {
+    try {
+      setUploading(id);
+      const url = await uploadToCloudinary(file);
+      if (url) {
+        setDocs(prev => ({ ...prev, [id]: url }));
+      }
+    } catch (error) {
+      console.error('Doc upload failed:', error);
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const requirements = [
+    { id: 'sks', label: 'Transkrip SKS (110-120 SKS)' },
+    { id: 'ipk', label: 'Bukti IPK Minimum' },
+    { id: 'nilaiMataKuliah', label: 'Transkrip Nilai (Bebas E)' },
+    { id: 'administrasi', label: 'Bukti Lunas Administrasi' },
+  ];
+
+  const allReady = Object.values(docs).every(v => v !== '');
 
   return (
     <div className="grid lg:grid-cols-2 gap-10">
@@ -245,20 +267,41 @@ function SkripsiEnrollment({ onEnroll }: { onEnroll: (docs: any) => void }) {
         <div className="card p-8 bg-slate-900 text-white space-y-6">
            <h3 className="text-2xl font-black italic">Syarat Akademik</h3>
            <ul className="space-y-4">
-              {[
-                { id: 'sks', label: 'Telah Menempuh 110-120 SKS' },
-                { id: 'ipk', label: 'Memenuhi IPK Minimum Program Studi' },
-                { id: 'nilaiMataKuliah', label: 'Bebas Nilai E & Batasan Nilai D' },
-                { id: 'administrasi', label: 'Lunas Administrasi Semester Berjalan' },
-              ].map(s => (
-                <li key={s.id} onClick={() => setDocs({...docs, [s.id as keyof typeof docs]: !docs[s.id as keyof typeof docs]})} className="flex items-center justify-between cursor-pointer group">
-                  <span className="text-sm text-slate-400 group-hover:text-white transition-colors">{s.label}</span>
-                  <div className={cn(
-                    "w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center",
-                    docs[s.id as keyof typeof docs] ? "bg-primary border-primary text-white" : "border-white/10"
-                  )}>
-                    {docs[s.id as keyof typeof docs] && <CheckCircle2 size={14} />}
+              {requirements.map(s => (
+                <li key={s.id} className="flex flex-col space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-400">{s.label}</span>
+                    <div className={cn(
+                      "w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center",
+                      docs[s.id] ? "bg-primary border-primary text-white" : "border-white/10"
+                    )}>
+                      {docs[s.id] && <CheckCircle2 size={14} />}
+                    </div>
                   </div>
+                  <label className={cn(
+                    "flex items-center justify-center p-4 rounded-xl border-2 border-dashed transition-all cursor-pointer",
+                    docs[s.id] ? "border-primary/50 bg-primary/5" : "border-white/10 hover:border-white/20"
+                  )}>
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      onChange={e => e.target.files?.[0] && handleDocUpload(s.id, e.target.files[0])}
+                      disabled={!!uploading}
+                    />
+                    {uploading === s.id ? (
+                      <Loader2 className="animate-spin text-primary" size={16} />
+                    ) : docs[s.id] ? (
+                      <div className="flex items-center space-x-2 text-[10px] font-black text-primary uppercase">
+                        <CheckCircle2 size={12} />
+                        <span>Terunggah</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                        <FileUp size={12} />
+                        <span>Pilih Berkas</span>
+                      </div>
+                    )}
+                  </label>
                 </li>
               ))}
            </ul>
@@ -270,14 +313,14 @@ function SkripsiEnrollment({ onEnroll }: { onEnroll: (docs: any) => void }) {
          </div>
          <div className="space-y-2">
             <h4 className="text-xl font-bold text-slate-900 italic underline decoration-primary/30 underline-offset-8">Daftar Skripsi</h4>
-            <p className="text-sm text-slate-400 max-w-xs mx-auto">Upload berkas pendukung sesuai kriteria akademik untuk mendaftar.</p>
+            <p className="text-sm text-slate-400 max-w-xs mx-auto">Upload semua berkas pendukung untuk mengaktifkan pendaftaran.</p>
          </div>
          <button 
-           disabled={!allReady}
+           disabled={!allReady || !!uploading}
            onClick={() => onEnroll(docs)}
            className="btn-primary w-full py-4 text-[10px] font-black uppercase tracking-widest disabled:opacity-20 shadow-xl"
          >
-           Daftar Skripsi Sekarang
+           {uploading ? 'Sedang Mengunggah...' : 'Daftar Skripsi Sekarang'}
          </button>
       </div>
     </div>

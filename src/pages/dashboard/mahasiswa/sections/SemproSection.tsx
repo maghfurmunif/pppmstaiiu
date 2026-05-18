@@ -48,10 +48,20 @@ export default function SemproSection() {
   const [error, setError] = useState<string | null>(null);
 
   const handleEnroll = async () => {
-    if (!userId || !docs.proposal) return;
+    if (!userId) {
+      setError('Sesi kedaluwarsa. Silakan login kembali.');
+      return;
+    }
+    if (!docs.proposal) {
+      setError('Silakan pilih berkas proposal terlebih dahulu.');
+      return;
+    }
+    
     try {
       setError(null);
       setUploading(true);
+      console.log('Sending Sempro registration for user:', userId);
+      
       const newReg: SemproRegistration = {
         id: crypto.randomUUID(), 
         studentId: userId,
@@ -59,16 +69,18 @@ export default function SemproSection() {
         status: 'SUBMITTED',
         proposalFile: docs.proposal
       };
+      
       await semproService.saveRegistration(newReg);
       
       // Artificial delay for DB propagation
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise(r => setTimeout(r, 1200));
       
       const refreshed = await semproService.getRegistrationByStudent(userId);
       setRegistration(refreshed || newReg);
+      console.log('Sempro registration success:', refreshed || newReg);
     } catch (err: any) {
-      console.error('Enroll error:', err);
-      setError(err.message || 'Gagal mengirim pendaftaran. Periksa koneksi internet atau SQL Query Anda.');
+      console.error('Enroll error details:', err);
+      setError(err.message || 'Gagal mengirim pendaftaran. Pastikan tabel sempro_registrations sudah dibuat via SQL.');
     } finally {
       setUploading(false);
     }

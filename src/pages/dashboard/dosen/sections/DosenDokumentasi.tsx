@@ -3,7 +3,8 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { 
   Plus, Search, Filter, Layers, 
   Calendar, FileText, Download, ExternalLink,
-  Tag, Hash, User, Globe, Save
+  Tag, Hash, User, Globe, Save,
+  FileUp, Loader2, CheckCircle2
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { penelitianService, DosenDokumentasi } from '@/src/services/penelitianService';
@@ -22,12 +23,30 @@ export default function DosenDokumentasiSection() {
     fetchData();
   }, [userId]);
 
+  const [saving, setSaving] = useState(false);
+  const [fileUrl, setFileUrl] = useState('');
+  const [uploadingFile, setUploadingFile] = useState(false);
+
+  const handleFileUpload = async (file: File) => {
+    try {
+      setUploadingFile(true);
+      const { uploadToCloudinary } = await import('@/src/lib/cloudinary');
+      const url = await uploadToCloudinary(file);
+      setFileUrl(url);
+    } catch (error) {
+      console.error('File upload failed:', error);
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
   const handleSave = async (e: FormEvent) => {
     e.preventDefault();
     if (!userId) return;
+    setSaving(true);
     const formData = new FormData(e.target as HTMLFormElement);
     const newDoc: DosenDokumentasi = {
-      id: '', // Let DB generate UUID
+      id: crypto.randomUUID(), 
       dosenId: userId,
       jenisKarya: formData.get('jenis') as string,
       judul: formData.get('judul') as string,
@@ -36,11 +55,19 @@ export default function DosenDokumentasiSection() {
       penulisTambahan: formData.get('penulis') as string,
       penerbit: formData.get('penerbit') as string,
       platform: formData.get('platform') as any,
-      fileUrl: '#'
+      fileUrl: fileUrl || '#'
     };
-    await penelitianService.saveDokumentasi(newDoc);
-    setDocs([newDoc, ...docs]);
-    setIsAdding(false);
+    try {
+      await penelitianService.saveDokumentasi(newDoc);
+      setDocs(prev => [newDoc, ...prev]);
+      setIsAdding(false);
+      setFileUrl('');
+    } catch (error) {
+      console.error('Failed to save documentation:', error);
+      alert('Gagal menyimpan dokumentasi. Periksa SQL Query Anda.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
