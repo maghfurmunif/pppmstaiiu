@@ -9,6 +9,7 @@ import { supabase } from '@/src/lib/supabase';
 const KKNSection = lazy(() => import('./sections/KKNSection'));
 const SemproSection = lazy(() => import('./sections/SemproSection'));
 const SkripsiSection = lazy(() => import('./sections/SkripsiSection'));
+const ProfileSection = lazy(() => import('../shared/ProfileSection'));
 
 export default function MahasiswaDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -27,7 +28,7 @@ export default function MahasiswaDashboard() {
     { id: 'kkn-mandiri', name: 'KKN Mandiri', path: '/dashboard/mahasiswa/kkn-mandiri', icon: Users },
     { id: 'sempro', name: 'Seminar Proposal', path: '/dashboard/mahasiswa/sempro', icon: BookOpen },
     { id: 'skripsi', name: 'Skripsi Pribadi', path: '/dashboard/mahasiswa/skripsi', icon: GraduationCap },
-    { id: 'account', name: 'Akun Saya', path: '/dashboard/mahasiswa/account', icon: Users },
+    { id: 'account', name: 'Profil Saya', path: '/dashboard/mahasiswa/profile', icon: Users },
   ];
 
   const handleLogout = async () => {
@@ -155,7 +156,7 @@ export default function MahasiswaDashboard() {
               <Route path="kkn-mandiri" element={<KKNSection type="MANDIRI" />} />
               <Route path="sempro" element={<SemproSection />} />
               <Route path="skripsi" element={<SkripsiSection />} />
-              <Route path="account" element={<div className="card p-10 text-center text-slate-400">Account Settings Under Development</div>} />
+              <Route path="profile" element={<ProfileSection />} />
             </Routes>
           </Suspense>
         </div>

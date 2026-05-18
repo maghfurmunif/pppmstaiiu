@@ -46,10 +46,14 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-20">
           <Link to="/" className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold italic shadow-sm">STAI</div>
+            <img 
+              src="https://res.cloudinary.com/dlvvzsyzv/image/upload/q_auto/f_auto/v1779118998/images_nvrkgt.jpg" 
+              alt="Logo" 
+              className="w-10 h-10 rounded-xl object-contain bg-slate-50 p-1 shadow-sm"
+            />
             <div>
-              <span className="block font-bold text-slate-900 leading-none text-lg">PPPM Portal</span>
-              <span className="block text-[10px] text-slate-500 uppercase tracking-widest mt-1">STAI Ihyaul Ulum Gresik</span>
+              <span className="block font-bold text-slate-900 leading-none text-lg">PPPM STAI</span>
+              <span className="block text-[10px] text-slate-500 uppercase tracking-widest mt-1">Ihyaul Ulum Gresik</span>
             </div>
           </Link>
 

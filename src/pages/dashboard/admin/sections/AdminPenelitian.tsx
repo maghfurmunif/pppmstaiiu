@@ -1,26 +1,30 @@
-
 import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   FlaskConical, CheckCircle2, XCircle, Eye, 
   Search, Calendar, Clock, FileText, Save,
   MapPin, User, Users, ClipboardList, BookOpen,
-  ArrowRight, MessageSquare, AlertCircle
+  ArrowRight, MessageSquare, AlertCircle, Loader2
 } from 'lucide-react';
-import { cn } from '@/src/lib/utils';
+import { toast } from 'sonner';
+import { cn, formatDate } from '@/src/lib/utils';
 import { penelitianService, PenelitianRegistration } from '@/src/services/penelitianService';
+import StatusBadge from '@/src/components/ui/StatusBadge';
 
 export default function AdminPenelitian() {
   const [registrations, setRegistrations] = useState<PenelitianRegistration[]>([]);
   const [search, setSearch] = useState('');
   const [selectedReg, setSelectedReg] = useState<PenelitianRegistration | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const refreshData = async () => {
+  const refreshData = async (quiet = false) => {
+    if (!quiet) setLoading(true);
     const data = await penelitianService.getRegistrations();
     setRegistrations(data);
     if (selectedReg) {
       setSelectedReg(data.find(r => r.dosenId === selectedReg.dosenId) || null);
     }
+    if (!quiet) setLoading(false);
   };
 
   useEffect(() => {
@@ -31,19 +35,26 @@ export default function AdminPenelitian() {
     r.dosenName?.toLowerCase().includes(search.toLowerCase())
   );
 
+  if (loading && registrations.length === 0) return (
+    <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
+      <Loader2 className="animate-spin text-primary" size={40} />
+      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Penelitian...</p>
+    </div>
+  );
+
   return (
     <div className="space-y-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 pb-8">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase italic underline decoration-primary underline-offset-8">Manajemen Penelitian</h1>
-          <p className="text-slate-500 font-medium mt-1">Kelola proposal, seminar, dan publikasi penelitian dosen.</p>
+          <p className="text-slate-500 font-medium mt-2 text-xs">Kelola proposal, seminar, dan publikasi penelitian dosen.</p>
         </div>
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input 
             type="text" 
             placeholder="Cari dosen..." 
-            className="input-field pl-12 py-3 w-64 text-sm" 
+            className="input-field pl-12 py-3 w-64 text-xs font-bold uppercase tracking-widest shadow-sm" 
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -51,70 +62,67 @@ export default function AdminPenelitian() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <div className="lg:col-span-1 space-y-3">
+        <div className="lg:col-span-1 space-y-3 max-h-[70vh] overflow-y-auto side-scrollbar pr-2">
           {filtered.length === 0 ? (
-            <div className="card p-10 text-center text-slate-400 italic text-xs font-medium">Belum ada pengajuan penelitian.</div>
+            <div className="card p-10 text-center space-y-3 border-dashed">
+               <FlaskConical className="mx-auto text-slate-200" size={40} />
+               <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">Belum ada pengajuan</p>
+            </div>
           ) : (
             filtered.map(reg => (
               <button 
                 key={reg.id} 
                 onClick={() => setSelectedReg(reg)}
                 className={cn(
-                  "w-full card p-5 text-left transition-all border-l-[6px] grow-on-hover",
-                  selectedReg?.id === reg.id ? "border-l-primary ring-2 ring-primary/10 shadow-xl" : "border-l-slate-200"
+                  "w-full card p-5 text-left transition-all border-l-[6px] group",
+                  selectedReg?.id === reg.id ? "border-l-primary shadow-xl scale-[1.02] bg-white" : "border-l-slate-200 hover:border-l-slate-400"
                 )}
               >
                 <div className="flex justify-between items-start mb-2">
-                   <div className="flex items-center space-x-2">
-                     <div className={cn(
-                        "w-2 h-2 rounded-full",
-                        ['SUBMITTED', 'SEMPRO_SUBMITTED', 'RESULT_SUBMITTED', 'REVISION_SUBMITTED'].includes(reg.status) 
-                          ? "bg-orange-500 animate-pulse" 
-                          : "bg-slate-200"
-                     )} />
-                     <span className="text-[9px] font-black text-primary uppercase tracking-widest italic">Research Project</span>
-                   </div>
+                   <StatusBadge status={reg.status} />
+                   <span className="text-[9px] font-bold text-slate-300 italic">#{reg.id.slice(0, 5)}</span>
                 </div>
-                <h4 className="font-bold text-slate-900 truncate">{reg.dosenName}</h4>
-                <div className="flex items-center space-x-2 mt-1">
-                   <span className={cn(
-                     "text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter",
-                     reg.status === 'COMPLETED' ? "bg-green-100 text-green-600" : "bg-slate-100 text-slate-400"
-                   )}>
-                     {reg.status.replace('_', ' ')}
-                   </span>
-                </div>
+                <h4 className="font-bold text-slate-900 truncate group-hover:text-primary">{reg.dosenName}</h4>
               </button>
             ))
           )}
         </div>
 
         <div className="lg:col-span-2">
+          <AnimatePresence mode="wait">
           {selectedReg ? (
-            <div className="space-y-8 animate-in fade-in slide-in-from-right-4">
-              <div className="card bg-slate-900 text-white p-8">
-                 <div className="flex justify-between items-start">
+            <motion.div 
+              key={selectedReg.id}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-8"
+            >
+              <div className="card bg-slate-900 text-white p-8 relative overflow-hidden">
+                 <div className="absolute top-0 right-0 p-8 opacity-10">
+                    <FlaskConical size={120} />
+                 </div>
+                 <div className="relative z-10 flex justify-between items-start">
                     <div>
-                       <h2 className="text-2xl font-black italic text-white uppercase underline decoration-primary underline-offset-4">{selectedReg.dosenName}</h2>
-                       <p className="text-xs font-bold text-slate-400 mt-2 uppercase tracking-[0.2em]">Dosen Researcher • ID: {selectedReg.dosenId}</p>
+                       <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1">Researcher Profile</p>
+                       <h2 className="text-3xl font-black italic tracking-tighter uppercase">{selectedReg.dosenName}</h2>
+                       <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">ID: {selectedReg.dosenId}</p>
                     </div>
-                    <div className="px-4 py-2 bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-primary">
-                       {selectedReg.status}
-                    </div>
+                    <StatusBadge status={selectedReg.status} className="bg-white/10 border-white/20 text-white" />
                  </div>
               </div>
 
               {/* Action Phases */}
               {selectedReg.status === 'SUBMITTED' && (
-                <ProposalAction reg={selectedReg} onAction={refreshData} />
+                <ProposalAction reg={selectedReg} onAction={() => refreshData(true)} />
               )}
 
               {selectedReg.status === 'SEMPRO_SUBMITTED' && (
-                <SemproProofAction reg={selectedReg} onAction={refreshData} />
+                <SemproProofAction reg={selectedReg} onAction={() => refreshData(true)} />
               )}
 
               {(selectedReg.status === 'PROGRESS' || selectedReg.status === 'APPROVED' || selectedReg.status === 'SEMPRO_SUBMITTED') && (
-                <LogbookAction reg={selectedReg} onAction={refreshData} />
+                <LogbookAction reg={selectedReg} onAction={() => refreshData(true)} />
               )}
 
               {selectedReg.status === 'PROGRESS' && selectedReg.logbooks.filter(l => l.status === 'APPROVED').length >= 5 && (
@@ -126,15 +134,15 @@ export default function AdminPenelitian() {
               )}
 
               {selectedReg.status === 'RESULT_SUBMITTED' && (
-                <ResultAction reg={selectedReg} onAction={refreshData} />
+                <ResultAction reg={selectedReg} onAction={() => refreshData(true)} />
               )}
 
               {selectedReg.status === 'RESULT_APPROVED' && (
-                <FinalSemproProofAction reg={selectedReg} onAction={refreshData} />
+                <FinalSemproProofAction reg={selectedReg} onAction={() => refreshData(true)} />
               )}
 
               {selectedReg.status === 'REVISION_SUBMITTED' && (
-                <RevisionAction reg={selectedReg} onAction={refreshData} />
+                <RevisionAction reg={selectedReg} onAction={() => refreshData(true)} />
               )}
 
               {selectedReg.status === 'PUBLICATION' && (
@@ -189,13 +197,20 @@ export default function AdminPenelitian() {
                     </div>
                  </div>
               </div>
-            </div>
+            </motion.div>
           ) : (
-            <div className="card h-[400px] flex flex-col items-center justify-center text-center p-20 border-dashed">
+            <motion.div 
+               key="empty"
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               exit={{ opacity: 0 }}
+               className="card h-[400px] flex flex-col items-center justify-center text-center p-20 border-dashed"
+            >
                <FlaskConical size={64} className="text-slate-100 mb-4" />
                <h3 className="text-xl font-bold text-slate-300 uppercase italic tracking-widest">Pilih pengajuan penelitian</h3>
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
         </div>
       </div>
     </div>

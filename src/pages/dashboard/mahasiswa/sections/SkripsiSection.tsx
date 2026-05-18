@@ -6,46 +6,40 @@ import {
   AlertCircle, Camera, Loader2, Download, ExternalLink,
   GraduationCap, BookOpen, FileText, Info, UserCheck, MessageSquare, Eye
 } from 'lucide-react';
-import { cn } from '@/src/lib/utils';
+import { toast } from 'sonner';
+import { cn, formatDate } from '@/src/lib/utils';
 import { skripsiService, SkripsiRegistration, SkripsiLogbook } from '@/src/services/skripsiService';
-
 import { uploadToCloudinary } from '@/src/lib/cloudinary';
+import StatusBadge from '@/src/components/ui/StatusBadge';
 
 export default function SkripsiSection() {
   const [registration, setRegistration] = useState<SkripsiRegistration | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const userId = localStorage.getItem('user_id');
 
   useEffect(() => {
     const fetchData = async () => {
       if (!userId) return;
-      const data = await skripsiService.getRegistrationByStudent(userId);
-      setRegistration(data);
-      setLoading(false);
+      try {
+        setLoading(true);
+        const data = await skripsiService.getRegistrationByStudent(userId);
+        setRegistration(data);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
   }, [userId]);
-
-  const handleUpload = async (file: File) => {
-    try {
-      setUploading('main');
-      const url = await uploadToCloudinary(file);
-      return url;
-    } catch (error) {
-      console.error('Upload failed:', error);
-      return null;
-    } finally {
-      setUploading(null);
-    }
-  };
 
   const [error, setError] = useState<string | null>(null);
 
   const handleEnroll = async (docs: any) => {
     if (!userId) return;
     try {
+      setActionLoading(true);
       setError(null);
       const newReg: SkripsiRegistration = {
         id: crypto.randomUUID(), 
@@ -62,29 +56,41 @@ export default function SkripsiSection() {
       
       const refreshed = await skripsiService.getRegistrationByStudent(userId);
       setRegistration(refreshed || newReg);
+      toast.success('Pendaftaran skripsi berhasil dikirim');
     } catch (err: any) {
       console.error('Skripsi enroll error:', err);
-      setError(err.message || 'Gagal mendaftar skripsi. Pastikan tabel skripsi_registrations sudah dibuat via SQL.');
+      setError(err.message || 'Gagal mendaftar skripsi');
+      toast.error('Gagal mendaftar skripsi');
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const updateRegistration = async (updates: Partial<SkripsiRegistration>) => {
+  const updateRegistration = async (updates: Partial<SkripsiRegistration>, message?: string) => {
     if (!registration) return;
-    const updated = { ...registration, ...updates };
-    await skripsiService.saveRegistration(updated);
-    setRegistration(updated);
+    try {
+      setActionLoading(true);
+      const updated = { ...registration, ...updates };
+      await skripsiService.saveRegistration(updated);
+      setRegistration(updated);
+      if (message) toast.success(message);
+    } catch (e) {
+      toast.error('Gagal memperbarui status');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   if (loading) return (
-     <div className="flex flex-col items-center justify-center py-20 italic text-slate-400 font-bold uppercase tracking-widest text-xs">
-        <Loader2 className="animate-spin mb-4" size={32} />
-        Authorizing Skripsi Portal...
+     <div className="flex flex-col items-center justify-center py-20 italic text-slate-400 font-bold uppercase tracking-widest text-xs space-y-4">
+        <Loader2 className="animate-spin text-primary" size={40} />
+        <p>Authorizing Skripsi Portal...</p>
      </div>
   );
 
   return (
     <div className="space-y-10 pb-20 text-slate-900">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 pb-8">
         <div className="space-y-0.5">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest mb-2">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
@@ -93,14 +99,9 @@ export default function SkripsiSection() {
           <h1 className="text-4xl font-bold text-slate-900 tracking-tight uppercase italic underline decoration-primary/30 underline-offset-8">
             Skripsi Pribadi
           </h1>
-          <p className="text-slate-500 font-medium pt-2">Manajemen penelitian akhir dan tugas akhir strata satu Anda.</p>
+          <p className="text-slate-500 font-medium pt-2 text-xs">Manajemen penelitian akhir dan tugas akhir strata satu Anda.</p>
         </div>
-        <div className="flex items-center glass-morphism rounded-2xl px-6 py-3 border-white/40 shadow-lg">
-           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-3">Status</span>
-           <span className="text-xs font-black text-primary uppercase italic tracking-tighter">
-             {registration?.status || 'NOT_ENROLLED'}
-           </span>
-        </div>
+        <StatusBadge status={registration?.status || 'NOT_ENROLLED'} className="px-6 py-3 text-xs" />
       </div>
 
       {!registration ? (
@@ -111,91 +112,128 @@ export default function SkripsiSection() {
                 <span>{error}</span>
              </div>
            )}
-           <SkripsiEnrollment onEnroll={handleEnroll} />
+           <SkripsiEnrollment onEnroll={handleEnroll} actionLoading={actionLoading} />
         </div>
       ) : (
         <div className="space-y-10">
           <AnimatePresence mode="wait">
             {registration.status === 'SUBMITTED' && (
-              <div className="card p-20 text-center space-y-6">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="card p-20 text-center space-y-6 border-dashed"
+              >
                  <Loader2 className="animate-spin text-primary mx-auto" size={48} />
                  <h3 className="text-2xl font-bold text-slate-900 italic tracking-tighter underline decoration-primary/30 underline-offset-8">Verifikasi Pendaftaran Skripsi</h3>
                  <p className="text-slate-400 font-medium">Biro Skripsi STAI Ihyaul Ulum sedang memvalidasi berkas administrasi dan IPK Anda.</p>
-              </div>
+              </motion.div>
             )}
 
             {registration.status === 'APPROVED' && registration.advisor && (
-              <div className="space-y-10">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-10"
+              >
                 <div className="card bg-slate-900 text-white p-10 overflow-hidden relative">
                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                       <div className="space-y-1">
                          <p className="text-[10px] font-black text-primary uppercase tracking-widest">Dosen Pembimbing Utama</p>
                          <h3 className="text-3xl font-black italic tracking-tighter">{registration.advisor.name}</h3>
-                         <p className="text-xs text-slate-400 font-medium">Silakan lakukan bimbingan minimal 10 kali sebelum pendaftaran munaqosyah.</p>
+                         <p className="text-xs text-slate-400 font-medium italic">Silakan lakukan bimbingan minimal 10 kali sebelum pendaftaran munaqosyah.</p>
                       </div>
                       <button 
-                         onClick={() => updateRegistration({ status: 'PROGRESS' })}
-                         className="btn-primary py-4 px-10 text-[10px] shadow-2xl"
+                         disabled={actionLoading}
+                         onClick={() => updateRegistration({ status: 'PROGRESS' }, 'Bimbingan dimulai')}
+                         className="btn-primary py-4 px-10 text-[10px] shadow-2xl disabled:opacity-50"
                       >
-                         Mulai Bimbingan Sekarang
+                         {actionLoading ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'Mulai Bimbingan Sekarang'}
                       </button>
                    </div>
                    <UserCheck size={180} className="absolute -right-10 -bottom-10 opacity-5" />
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {registration.status === 'PROGRESS' && (
-              <SkripsiBimbingan registration={registration} onUpdate={updateRegistration} />
+              <SkripsiBimbingan registration={registration} onUpdate={updateRegistration} actionLoading={actionLoading} />
             )}
 
             {registration.status === 'DOCS_SUBMITTED' && (
-               <div className="card p-20 text-center space-y-6">
+               <motion.div 
+                 initial={{ opacity: 0, scale: 0.95 }}
+                 animate={{ opacity: 1, scale: 1 }}
+                 className="card p-20 text-center space-y-6 border-dashed"
+               >
                  <Loader2 className="animate-spin text-primary mx-auto" size={48} />
                  <h3 className="text-2xl font-bold text-slate-900 italic">Validasi Pendaftaran Munaqosyah</h3>
                  <p className="text-slate-400 font-medium">Berkas syarat ujian skripsi Anda sedang diverifikasi admin.</p>
-              </div>
+              </motion.div>
             )}
 
             {registration.status === 'SCHEDULED' && registration.examSchedule && (
-              <div className="space-y-10">
-                 <div className="card bg-primary text-white p-10">
-                    <h3 className="text-2xl font-black italic mb-6 underline decoration-white/20 underline-offset-8">Jadwal Munaqosyah</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                       <div>
-                          <p className="text-[9px] font-black text-white/50 uppercase tracking-widest">Hari & Tanggal</p>
-                          <p className="font-bold text-lg">{registration.examSchedule.hari}, {registration.examSchedule.tanggal}</p>
-                       </div>
-                       <div>
-                          <p className="text-[9px] font-black text-white/50 uppercase tracking-widest">Waktu & Ruang</p>
-                          <p className="font-bold text-lg">{registration.examSchedule.pukul} • {registration.examSchedule.ruang}</p>
-                       </div>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="space-y-10"
+              >
+                 <div className="card bg-primary text-white p-10 relative overflow-hidden shadow-2xl shadow-primary/20">
+                    <div className="relative z-10">
+                      <h3 className="text-2xl font-black italic mb-6 underline decoration-white/20 underline-offset-8">Jadwal Munaqosyah</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                         <div>
+                            <p className="text-[9px] font-black text-white/50 uppercase tracking-widest mb-1">Hari & Tanggal</p>
+                            <p className="font-bold text-lg">{registration.examSchedule.hari}, {registration.examSchedule.tanggal}</p>
+                         </div>
+                         <div>
+                            <p className="text-[9px] font-black text-white/50 uppercase tracking-widest mb-1">Waktu & Ruang</p>
+                            <p className="font-bold text-lg">{registration.examSchedule.pukul} • {registration.examSchedule.ruang}</p>
+                         </div>
+                      </div>
                     </div>
+                    <Calendar size={150} className="absolute -right-10 -bottom-10 text-white/10" />
                  </div>
                  <div className="max-w-2xl mx-auto space-y-8">
-                    <h4 className="text-center font-bold text-slate-900 italic">Dokumentasi & Revisi Pasca-Ujian</h4>
+                    <div className="text-center space-y-2">
+                       <h4 className="font-black italic text-slate-900 uppercase tracking-tight">Pelaksanaan Ujian</h4>
+                       <p className="text-xs text-slate-500 font-medium">Klik konfirmasi jika ujian telah selesai dilaksanakan.</p>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
-                       <div onClick={async () => {
-                              const confirmText = confirm('Konfirmasi bahwa Sidang Munaqosyah telah SELESAI dilaksanakan? Status akan dikirim ke Admin untuk penilaian akhir.');
-                              if (confirmText) {
-                                 await updateRegistration({ status: 'COMPLETED' });
-                                 alert('Status diperbarui. Tunggu Admin memberikan nilai akhir.');
-                              }
-                           }} className="card p-8 border-dashed flex flex-col items-center justify-center space-y-3 cursor-pointer hover:bg-primary/5 transition-all group">
-                          <Camera className="text-slate-300 group-hover:text-primary" />
-                          <span className="text-[10px] font-black text-slate-400 group-hover:text-primary uppercase tracking-widest">Upload Bukti Sidang</span>
+                       <div 
+                         onClick={async () => {
+                           if (actionLoading) return;
+                           const confirmText = confirm('Konfirmasi bahwa Sidang Munaqosyah telah SELESAI dilaksanakan? Status akan dikirim ke Admin untuk penilaian akhir.');
+                           if (confirmText) {
+                              await updateRegistration({ status: 'COMPLETED' }, 'Status munaqosyah selesai! Menunggu penilaian.');
+                           }
+                         }} 
+                         className={cn(
+                           "card p-10 border-dashed flex flex-col items-center justify-center space-y-4 cursor-pointer hover:bg-primary/5 transition-all group",
+                           actionLoading && "opacity-50 pointer-events-none"
+                         )}
+                       >
+                          {actionLoading ? <Loader2 className="animate-spin text-primary" size={32} /> : (
+                            <>
+                              <Camera className="text-slate-300 group-hover:text-primary transition-colors" size={32} />
+                              <span className="text-[10px] font-black text-slate-400 group-hover:text-primary uppercase tracking-widest">Selesaikan Sidang</span>
+                            </>
+                          )}
                        </div>
-                       <div className="card p-8 border-dashed flex flex-col items-center justify-center space-y-3 opacity-30 cursor-not-allowed">
-                          <FileText className="text-slate-300" />
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Revisi Final</span>
+                       <div className="card p-10 border-dashed flex flex-col items-center justify-center space-y-4 opacity-30 cursor-not-allowed grayscale">
+                          <FileText className="text-slate-300" size={32} />
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Upload Revisi</span>
                        </div>
                     </div>
                  </div>
-              </div>
+              </motion.div>
             )}
 
             {registration.status === 'COMPLETED' && registration.grades && registration.grades.total !== undefined && (
-              <div className="max-w-4xl mx-auto space-y-10">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="max-w-4xl mx-auto space-y-10"
+              >
                  <div className="card p-12 bg-slate-900 text-white text-center relative overflow-hidden">
                     <div className="relative z-10 space-y-4">
                        <CheckCircle2 size={64} className="mx-auto text-primary" />
@@ -216,29 +254,45 @@ export default function SkripsiSection() {
                     </div>
                     <div className="card p-8 bg-primary text-white flex flex-col items-center justify-center text-center space-y-2">
                        <CheckCircle2 size={24} />
-                       <p className="font-bold text-xs uppercase tracking-widest">Gelar Akademik: S.Pd</p>
+                       <p className="font-bold text-xs uppercase tracking-widest tracking-[0.1em]">Gelar Akademik: S.Pd</p>
                     </div>
                  </div>
-              </div>
+              </motion.div>
             )}
+            
             {registration.status === 'COMPLETED' && (!registration.grades || registration.grades.total === undefined) && (
-               <div className="card p-20 text-center space-y-6">
+               <motion.div 
+                 initial={{ opacity: 0, scale: 0.95 }}
+                 animate={{ opacity: 1, scale: 1 }}
+                 className="card p-20 text-center space-y-6 border-dashed"
+               >
                   <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                      <Clock className="text-primary animate-pulse" size={40} />
                   </div>
                   <h3 className="text-2xl font-black italic uppercase tracking-tighter">Dalam Penilaian Akhir</h3>
                   <p className="text-slate-500 font-medium max-w-md mx-auto">Sidang Munaqosyah telah selesai. Admin sedang menginput skor akhir skripsi Anda. Mohon cek kembali secara berkala.</p>
-               </div>
+               </motion.div>
             )}
+
            {registration.status === 'REJECTED' && (
-              <div className="card p-12 border-red-200 bg-red-50 text-center space-y-6">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="card p-12 border-red-200 bg-red-50 text-center space-y-6"
+              >
                  <AlertCircle size={48} className="text-red-500 mx-auto" />
                  <div>
                     <h3 className="text-2xl font-bold text-red-900">Pendaftaran Ditolak</h3>
-                    <p className="text-red-700/60 font-medium mt-2">"{registration.rejectionReason || 'Ditemukan ketidaksesuaian berkas.'}"</p>
+                    <p className="text-red-700/60 font-medium mt-2 italic">"{registration.rejectionReason || 'Ditemukan ketidaksesuaian berkas.'}"</p>
                  </div>
-                 <button onClick={() => updateRegistration({ status: 'ENROLL' })} className="btn-primary bg-red-600 hover:bg-red-700 text-[10px]">Perbaiki Berkas</button>
-              </div>
+                 <button 
+                   disabled={actionLoading}
+                   onClick={() => updateRegistration({ status: 'ENROLL' as any })} 
+                   className="btn-primary bg-red-600 hover:bg-red-700 text-[10px] disabled:opacity-50"
+                 >
+                   {actionLoading ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'Perbaiki Berkas'}
+                 </button>
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
@@ -247,7 +301,7 @@ export default function SkripsiSection() {
   );
 }
 
-function SkripsiEnrollment({ onEnroll }: { onEnroll: (docs: any) => void }) {
+function SkripsiEnrollment({ onEnroll, actionLoading }: { onEnroll: (docs: any) => void, actionLoading: boolean }) {
   const [docs, setDocs] = useState<Record<string, string>>({
      sks: '', ipk: '', nilaiMataKuliah: '', administrasi: ''
   });
@@ -259,9 +313,11 @@ function SkripsiEnrollment({ onEnroll }: { onEnroll: (docs: any) => void }) {
       const url = await uploadToCloudinary(file);
       if (url) {
         setDocs(prev => ({ ...prev, [id]: url }));
+        toast.success('Berkas berhasil diunggah');
       }
     } catch (error) {
       console.error('Doc upload failed:', error);
+      toast.error('Gagal mengunggah berkas');
     } finally {
       setUploading(null);
     }
@@ -280,13 +336,16 @@ function SkripsiEnrollment({ onEnroll }: { onEnroll: (docs: any) => void }) {
     <div className="grid lg:grid-cols-2 gap-10">
       <div className="space-y-8">
         <div className="card p-8 bg-slate-900 text-white space-y-6">
-           <h3 className="text-2xl font-black italic">Syarat Akademik</h3>
+           <h3 className="text-2xl font-black italic flex items-center">
+             <FileUp className="mr-3 text-primary" size={24} />
+             Syarat Akademik
+           </h3>
            <ul className="space-y-4">
               {requirements.map(s => (
                 <li key={s.id} className="group relative">
                   <label className={cn(
                     "flex flex-col space-y-3 p-5 rounded-2xl border-2 border-dashed transition-all cursor-pointer",
-                    docs[s.id] ? "border-primary/50 bg-primary/10" : "border-white/10 hover:border-white/30"
+                    docs[s.id] ? "border-primary bg-primary/10" : "border-white/10 hover:border-white/30"
                   )}>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-bold text-slate-100 group-hover:text-primary transition-colors">{s.label}</span>
@@ -302,7 +361,7 @@ function SkripsiEnrollment({ onEnroll }: { onEnroll: (docs: any) => void }) {
                       type="file" 
                       className="hidden" 
                       onChange={e => e.target.files?.[0] && handleDocUpload(s.id, e.target.files[0])}
-                      disabled={!!uploading}
+                      disabled={!!uploading || actionLoading}
                     />
                     
                     <div className="flex items-center space-x-3">
@@ -314,12 +373,12 @@ function SkripsiEnrollment({ onEnroll }: { onEnroll: (docs: any) => void }) {
                        ) : docs[s.id] ? (
                          <div className="flex items-center space-x-2 text-[10px] font-black text-primary uppercase">
                             <CheckCircle2 size={12} />
-                            <span>File Terverifikasi</span>
+                            <span>File Terupload ✓</span>
                          </div>
                        ) : (
                          <div className="flex items-center space-x-2 text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-300">
                             <FileUp size={14} />
-                            <span>Pilih Berkas Sekarang</span>
+                            <span>Ambil File Berkas</span>
                          </div>
                        )}
                     </div>
@@ -329,27 +388,27 @@ function SkripsiEnrollment({ onEnroll }: { onEnroll: (docs: any) => void }) {
            </ul>
         </div>
       </div>
-      <div className="card p-12 text-center flex flex-col items-center justify-center space-y-6 border-dashed border-2 border-slate-200 bg-white/50">
-         <div className="w-16 h-16 bg-primary/10 rounded-[28px] flex items-center justify-center text-primary">
-            <GraduationCap size={32} />
+      <div className="card p-12 text-center flex flex-col items-center justify-center space-y-6 border-dashed border-2 border-slate-200 bg-white shadow-xl">
+         <div className="w-20 h-20 bg-primary/10 rounded-[32px] flex items-center justify-center text-primary rotate-3 transition-transform hover:rotate-6">
+            <GraduationCap size={40} />
          </div>
-         <div className="space-y-2">
-            <h4 className="text-xl font-bold text-slate-900 italic underline decoration-primary/30 underline-offset-8">Daftar Skripsi</h4>
-            <p className="text-sm text-slate-400 max-w-xs mx-auto">Upload semua berkas pendukung untuk mengaktifkan pendaftaran.</p>
+         <div className="space-y-4">
+            <h4 className="text-2xl font-black text-slate-900 italic underline decoration-primary/30 underline-offset-8">Daftar Skripsi</h4>
+            <p className="text-sm text-slate-400 max-w-xs mx-auto font-medium">Upload semua berkas pendukung di samping untuk mengaktifkan pendaftaran Anda.</p>
          </div>
          <button 
-           disabled={!allReady || !!uploading}
+           disabled={!allReady || !!uploading || actionLoading}
            onClick={() => onEnroll(docs)}
-           className="btn-primary w-full py-4 text-[10px] font-black uppercase tracking-widest disabled:opacity-20 shadow-xl"
+           className="btn-primary w-full py-5 text-[10px] font-black uppercase tracking-widest disabled:opacity-20 shadow-2xl transition-all"
          >
-           {uploading ? 'Sedang Mengunggah...' : 'Daftar Skripsi Sekarang'}
+           {actionLoading ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'Daftar Skripsi Sekarang'}
          </button>
       </div>
     </div>
   );
 }
 
-function SkripsiBimbingan({ registration, onUpdate }: { registration: SkripsiRegistration, onUpdate: (u: any) => void }) {
+function SkripsiBimbingan({ registration, onUpdate, actionLoading }: { registration: SkripsiRegistration, onUpdate: (u: any, m?: string) => void, actionLoading: boolean }) {
   const [isAdding, setIsAdding] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState<Partial<SkripsiLogbook>>({
@@ -361,8 +420,10 @@ function SkripsiBimbingan({ registration, onUpdate }: { registration: SkripsiReg
       setUploading(true);
       const url = await uploadToCloudinary(file);
       setForm(prev => ({ ...prev, photo: url }));
+      toast.success('Bukti bimbingan berhasil diunggah');
     } catch (error) {
       console.error('Upload failed:', error);
+      toast.error('Gagal mengunggah foto');
     } finally {
       setUploading(false);
     }
@@ -370,13 +431,13 @@ function SkripsiBimbingan({ registration, onUpdate }: { registration: SkripsiReg
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!form.photo) return;
+    if (!form.photo) return toast.error('Lampirkan bukti foto bimbingan');
     const newLog: SkripsiLogbook = {
-      id: '',
+      id: crypto.randomUUID(),
       ...form as any,
       status: 'PENDING'
     };
-    onUpdate({ logbooks: [newLog, ...registration.logbooks] });
+    onUpdate({ logbooks: [newLog, ...registration.logbooks] }, 'Progress bimbingan tersimpan');
     setIsAdding(false);
     setForm({ date: new Date().toISOString().split('T')[0] });
   };
@@ -394,81 +455,138 @@ function SkripsiBimbingan({ registration, onUpdate }: { registration: SkripsiReg
 
           <AnimatePresence>
             {isAdding && (
-              <motion.form initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} onSubmit={handleSubmit} className="card p-8 space-y-6 bg-primary/5 overflow-hidden">
+              <motion.form 
+                initial={{ opacity: 0, height: 0 }} 
+                animate={{ opacity: 1, height: 'auto' }} 
+                exit={{ opacity: 0, height: 0 }} 
+                onSubmit={handleSubmit} 
+                className="card p-8 space-y-6 bg-primary/5 border-primary/10 overflow-hidden"
+              >
                 <div className="grid md:grid-cols-2 gap-6">
                    <div>
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Tanggal</label>
-                      <input type="date" className="input-field" value={form.date} onChange={e => setForm({...form, date: e.target.value})} required />
+                      <input type="date" className="input-field shadow-sm" value={form.date} onChange={e => setForm({...form, date: e.target.value})} required />
                    </div>
                    <div>
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Pokok Bahasan</label>
-                      <input type="text" className="input-field" placeholder="Bab 1... Bab 2..." onChange={e => setForm({...form, topic: e.target.value})} required />
+                      <input type="text" className="input-field shadow-sm" placeholder="Contoh: Bab 1 Pendahuluan" onChange={e => setForm({...form, topic: e.target.value})} required />
                    </div>
                 </div>
                 <div>
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Catatan/Komentar</label>
-                   <textarea className="input-field h-24" placeholder="Komentar pembimbing..." onChange={e => setForm({...form, comment: e.target.value})} required />
+                   <textarea className="input-field h-24 shadow-sm" placeholder="Apa yang Anda pelajari atau diskusikan?" onChange={e => setForm({...form, comment: e.target.value})} required />
                 </div>
                 <div>
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Foto Bukti Bimbingan</label>
-                   <div className="flex items-center gap-4">
-                      <label className={cn("flex-grow h-24 rounded-xl border-2 border-dashed flex items-center justify-center transition-all cursor-pointer overflow-hidden", form.photo ? "border-primary" : "border-slate-200 text-slate-300 hover:border-primary/50")}>
+                   <div className="flex items-center gap-6">
+                      <label className={cn("flex-grow h-32 rounded-2xl border-2 border-dashed flex items-center justify-center transition-all cursor-pointer overflow-hidden group", form.photo ? "border-primary" : "border-slate-200 text-slate-300 hover:border-primary/50")}>
                          <input type="file" className="hidden" onChange={e => e.target.files?.[0] && handleLogPhoto(e.target.files[0])} disabled={uploading} />
-                         {uploading ? <Loader2 className="animate-spin" size={24} /> : form.photo ? <img src={form.photo} className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : <Camera size={24} />}
+                         {uploading ? (
+                           <Loader2 className="animate-spin text-primary" size={32} />
+                         ) : form.photo ? (
+                           <img src={form.photo} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                         ) : (
+                           <div className="flex flex-col items-center">
+                              <Camera size={32} className="group-hover:text-primary transition-colors" />
+                              <span className="text-[9px] font-black uppercase mt-2">Upload Foto</span>
+                           </div>
+                         )}
                       </label>
-                      {form.photo && <div className="text-[10px] font-black text-primary uppercase italic">Terverifikasi di Cloudinary ✓</div>}
+                      {form.photo && <div className="text-[10px] font-black text-primary uppercase italic tracking-widest">Image Cloud Sync ✓</div>}
                    </div>
                 </div>
-                <button type="submit" disabled={!form.photo || uploading} className="w-full btn-primary py-4 text-[10px] tracking-widest shadow-xl disabled:opacity-20">
-                   {uploading ? 'Sedang Mengunggah...' : 'Simpan Logbook Bimbingan'}
+                <button type="submit" disabled={!form.photo || uploading || actionLoading} className="w-full btn-primary py-5 text-[10px] tracking-widest shadow-2xl disabled:opacity-20 font-black uppercase">
+                   {actionLoading ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'Simpan Logbook'}
                 </button>
               </motion.form>
             )}
           </AnimatePresence>
 
           <div className="space-y-4">
-             {registration.logbooks.map(log => (
-               <div key={log.id} className="card p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:translate-x-1 transition-all">
-                  <div className="flex items-start space-x-4">
-                     <div className="p-3 bg-slate-50 rounded-xl text-primary font-black text-xs">{log.date.split('-').reverse().join('/')}</div>
-                     <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                           <h5 className="font-bold text-slate-800">{log.topic}</h5>
-                           {log.photo && (
-                              <button onClick={() => window.open(log.photo, '_blank')}>
-                                 <Eye size={12} className="text-primary opacity-50 hover:opacity-100" />
-                              </button>
-                           )}
-                        </div>
-                        <p className="text-xs text-slate-400 italic line-clamp-1">"{log.comment}"</p>
-                     </div>
-                  </div>
-                  <div className={cn(
-                    "text-[9px] font-black uppercase px-3 py-1 rounded-full",
-                    log.status === 'APPROVED' ? "bg-green-100 text-green-600" : "bg-slate-100 text-slate-400"
-                  )}>
-                    {log.status}
-                  </div>
+             {registration.logbooks.length === 0 ? (
+               <div className="card p-20 text-center space-y-3 border-dashed opacity-50">
+                  <BookOpen className="mx-auto text-slate-200" size={48} />
+                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Belum ada jurnal bimbingan</p>
                </div>
-             ))}
+             ) : (
+               registration.logbooks.map(log => (
+                 <motion.div 
+                   layout
+                   key={log.id} 
+                   className="card p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-xl transition-all border-l-4 border-l-slate-100 hover:border-l-primary"
+                 >
+                    <div className="flex items-start space-x-5">
+                       <div className="flex flex-col items-center justify-center p-3 px-4 bg-slate-50 rounded-2xl border border-slate-100 min-w-[70px]">
+                          <span className="text-[9px] font-black text-slate-400 uppercase">{log.date.split('-')[0]}</span>
+                          <span className="text-sm font-black text-primary">{log.date.split('-').slice(1).reverse().join('/')}</span>
+                       </div>
+                       <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                             <h5 className="font-bold text-slate-800 text-lg">{log.topic}</h5>
+                             {log.photo && (
+                                <button onClick={() => window.open(log.photo, '_blank')} className="p-1 hover:bg-primary/5 rounded-lg text-primary opacity-40 hover:opacity-100 transition-all">
+                                   <Eye size={14} />
+                                </button>
+                             )}
+                          </div>
+                          <p className="text-xs text-slate-400 italic font-medium">"{log.comment}"</p>
+                       </div>
+                    </div>
+                    <div className={cn(
+                      "text-[9px] font-black uppercase px-4 py-1.5 rounded-full",
+                      log.status === 'APPROVED' ? "bg-green-50 text-green-600 border border-green-100" : 
+                      log.status === 'REJECTED' ? "bg-red-50 text-red-600 border border-red-100" :
+                      "bg-slate-50 text-slate-400 border border-slate-100"
+                    )}>
+                      {log.status === 'APPROVED' ? 'Diverifikasi' : 
+                       log.status === 'REJECTED' ? 'Ditolak' : 'Pending'}
+                    </div>
+                 </motion.div>
+               ))
+             )}
           </div>
        </div>
 
        <div className="space-y-8 text-center lg:text-left">
-          <div className="card p-10 bg-slate-900 text-white relative overflow-hidden group">
-             <div className="relative z-10 space-y-6">
+          <div className="card p-10 bg-slate-900 text-white relative overflow-hidden group shadow-2xl shadow-slate-900/20">
+             <div className="relative z-10 space-y-8">
                 <div>
-                  <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Quota Bimbingan</h4>
-                  <div className="text-5xl font-black italic mt-2">{bimbinganCount} <span className="text-sm opacity-30">/ 10 KALI</span></div>
+                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-2">Bimbingan Tracker</p>
+                  <div className="text-6xl font-black italic tracking-tighter flex items-end">
+                    {bimbinganCount} 
+                    <span className="text-base font-black opacity-20 ml-3 mb-2 uppercase tracking-widest">/ 10</span>
+                  </div>
                 </div>
-                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                   <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(100, (bimbinganCount / 10) * 100)}%` }} className="h-full bg-primary" />
+                <div className="space-y-2">
+                   <div className="h-3 bg-white/5 rounded-full overflow-hidden border border-white/5 p-0.5">
+                      <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(100, (bimbinganCount / 10) * 100)}%` }} className="h-full bg-primary rounded-full shadow-lg shadow-primary/40" />
+                   </div>
+                   <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest italic">
+                      <span>Progress</span>
+                      <span>{Math.min(100, Math.round((bimbinganCount / 10) * 100))}%</span>
+                   </div>
                 </div>
-                {isReadyForMunaqosyah && (
-                  <button onClick={() => onUpdate({ status: 'DOCS_SUBMITTED' })} className="w-full py-4 bg-primary text-white rounded-xl font-black text-[10px] uppercase shadow-2xl hover:scale-105 transition-all">Daftar Munaqosyah</button>
+                {isReadyForMunaqosyah && registration.status === 'PROGRESS' && (
+                  <button 
+                    disabled={actionLoading}
+                    onClick={() => onUpdate({ status: 'DOCS_SUBMITTED' as any }, 'Pengajuan munaqosyah dikirim')} 
+                    className="w-full py-5 bg-primary text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-2xl hover:scale-105 transition-all active:scale-95 flex items-center justify-center"
+                  >
+                    {actionLoading ? <Loader2 className="animate-spin" size={20} /> : 'Daftar Munaqosyah'}
+                  </button>
                 )}
              </div>
-             <MessageSquare size={160} className="absolute -right-12 -bottom-12 opacity-5 text-white group-hover:rotate-12 transition-transform" />
+             <MessageSquare size={180} className="absolute -right-16 -bottom-16 opacity-5 text-white group-hover:rotate-12 transition-transform duration-700" />
+          </div>
+          
+          <div className="card p-8 bg-slate-50 border-none">
+             <div className="flex items-center space-x-3 mb-4">
+                <Info size={16} className="text-primary" />
+                <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Pemberitahuan</h5>
+             </div>
+             <p className="text-xs text-slate-500 font-medium leading-relaxed italic">
+               Setiap input bimbingan wajib melampirkan foto dokumentasi sebagai bukti otentik kegiatan akademik.
+             </p>
           </div>
        </div>
     </div>

@@ -15,6 +15,7 @@ import { penelitianService } from '@/src/services/penelitianService';
 const PenelitianDosen = lazy(() => import('./sections/PenelitianDosen'));
 const PengabdianDosen = lazy(() => import('./sections/PengabdianDosen'));
 const DosenDokumentasi = lazy(() => import('./sections/DosenDokumentasi'));
+const ProfileSection = lazy(() => import('../shared/ProfileSection'));
 
 export default function DosenDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -26,7 +27,7 @@ export default function DosenDashboard() {
     { id: 'pengabdian', name: 'Pengabdian', path: '/dashboard/dosen/pengabdian', icon: HeartHandshake },
     { id: 'jurnal', name: 'Jurnal STAIU', path: 'https://jurnal.staiiu.ac.id', icon: Globe, external: true },
     { id: 'dokumentasi', name: 'Dokumentasi', path: '/dashboard/dosen/dokumentasi', icon: Layers },
-    { id: 'settings', name: 'Settings', path: '/dashboard/dosen/settings', icon: Settings },
+    { id: 'settings', name: 'Profil Saya', path: '/dashboard/dosen/profile', icon: Users },
   ];
 
   return (
@@ -174,6 +175,7 @@ export default function DosenDashboard() {
               <Route path="penelitian" element={<PenelitianDosen />} />
               <Route path="pengabdian" element={<PengabdianDosen />} />
               <Route path="dokumentasi" element={<DosenDokumentasi />} />
+              <Route path="profile" element={<ProfileSection />} />
               <Route path="*" element={<div className="card p-10 text-center text-slate-400 font-bold uppercase tracking-widest text-xs italic">Section Under Development</div>} />
             </Routes>
           </Suspense>

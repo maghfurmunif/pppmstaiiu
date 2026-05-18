@@ -15,6 +15,7 @@ export interface KKNRegistration {
   surveyDocs?: any;
   rkl?: any;
   deployment?: any;
+  deploymentPhoto?: string;
   logbooks: KKNLogbook[];
   totalHours: number;
   lpk?: any;

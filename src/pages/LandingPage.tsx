@@ -1,25 +1,46 @@
 import { motion } from 'motion/react';
-import { ArrowRight, BookOpen, Users, BarChart3, Globe, GraduationCap, Landmark } from 'lucide-react';
+import { ArrowRight, BookOpen, Users, BarChart3, Globe, GraduationCap, Landmark, Loader2, Calendar } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { publicService, Announcement } from '@/src/services/publicService';
 
 export default function LandingPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('user_role'));
   const [userRole, setUserRole] = useState(localStorage.getItem('user_role') || 'MAHASISWA');
+  const [stats, setStats] = useState<any>(null);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const savedRole = localStorage.getItem('user_role');
-    if (savedRole) {
+    if (savedRole && window.location.pathname === '/') {
       navigate(`/dashboard/${savedRole.toLowerCase()}`);
       return;
     }
+
+    const fetchData = async () => {
+      try {
+        const [statsData, annData] = await Promise.all([
+          publicService.getGlobalStats(),
+          publicService.getAnnouncements()
+        ]);
+        setStats(statsData);
+        setAnnouncements(annData);
+      } catch (e) {
+        console.error('Landing page fetch error:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
 
     const checkLogin = () => {
       setIsLoggedIn(!!localStorage.getItem('user_role'));
       setUserRole(localStorage.getItem('user_role') || 'MAHASISWA');
     };
-    const interval = setInterval(checkLogin, 1000);
+    const interval = setInterval(checkLogin, 2000);
     return () => clearInterval(interval);
   }, []);
 
@@ -29,38 +50,39 @@ export default function LandingPage() {
     <div className="space-y-12 pb-20">
       {/* Hero Section */}
       <section className="relative h-[650px] overflow-hidden rounded-[40px] shadow-2xl mx-4 mt-4">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541339907198-e08756ebafe3?auto=format&fit=crop&q=80&w=2000')] bg-cover bg-center">
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/80 to-slate-900/20 backdrop-blur-[2px]"></div>
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=2000')] bg-cover bg-center">
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/60 to-slate-900/10 backdrop-blur-[1px]"></div>
         </div>
         
         <div className="relative h-full flex flex-col justify-center px-12 md:px-20 max-w-4xl space-y-8">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-primary text-xs font-bold tracking-widest uppercase"
+            className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-black tracking-[0.3em] uppercase"
           >
-            <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
-            <span>Academic Excellence</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(var(--primary),0.5)]"></span>
+            <span>Digital Research Hub</span>
           </motion.div>
           
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-5xl md:text-7xl font-bold text-white leading-tight"
+            className="text-5xl md:text-7xl font-black text-white leading-tight tracking-tighter"
           >
-            PPPM Digital <br />
-            <span className="text-primary italic">Portal</span>
+            Portal Digital <br />
+            <span className="text-primary italic underline underline-offset-8 decoration-white/30">PPPM</span> STAI <br />
+            <span className="text-white/80">Ihyaul Ulum</span>
           </motion.h1>
           
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-slate-300 text-lg md:text-xl leading-relaxed max-w-2xl"
+            className="text-slate-100 text-lg md:text-xl font-medium leading-relaxed max-w-2xl drop-shadow-lg"
           >
             Pusat Penelitian dan Pengabdian kepada Masyarakat STAI Ihyaul Ulum Gresik. 
-            Mengintegrasikan penelitian inovatif dengan pengabdian berkelanjutan dalam satu platform digital.
+            Digitalisasi manajemen akademik untuk masa depan yang lebih inovatif.
           </motion.p>
           
           <motion.div 
@@ -71,39 +93,45 @@ export default function LandingPage() {
           >
             <Link 
               to={isLoggedIn ? getDashboardPath() : "/register"} 
-              className="px-8 py-4 bg-primary hover:bg-primary-dark text-white font-bold rounded-2xl shadow-lg transition-all hover:scale-105 active:scale-95 flex items-center group"
+              className="px-10 py-5 bg-primary hover:bg-primary-dark text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-[0_20px_50px_rgba(var(--primary-rgb),0.3)] transition-all hover:scale-105 active:scale-95 flex items-center group"
             >
-              {isLoggedIn ? 'Go to Dashboard' : 'Get Started'}
-              <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+              {isLoggedIn ? 'Buka Dashboard' : 'Mari Bergabung'}
+              <ArrowRight className="ml-3 group-hover:translate-x-1 transition-transform" size={18} />
             </Link>
-            <button className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl backdrop-blur-md border border-white/30 shadow-lg transition-all">
-              Learn More
-            </button>
           </motion.div>
         </div>
 
-        {/* Floating Stats Card */}
+        {/* Floating Stats Card - Real Liked Data */}
         <div className="absolute right-12 bottom-12 hidden lg:block">
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 }}
-            className="glass-morphism p-8 rounded-[32px] space-y-6 w-80"
+            className="bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-[40px] space-y-6 w-85 shadow-2xl"
           >
             <div className="flex items-center justify-between">
-              <span className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Realtime Activity</span>
-              <div className="flex -space-x-2">
-                {[1,2,3].map(i => (
-                  <div key={i} className="w-8 h-8 rounded-full border-2 border-slate-900 bg-slate-700" />
-                ))}
+              <span className="text-white/60 font-black uppercase tracking-widest text-[10px]">Realtime Activity</span>
+              <div className="flex items-center space-x-2">
+                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                 <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Global Node Sync</span>
               </div>
             </div>
             <div className="space-y-1">
-              <p className="text-3xl font-bold text-white uppercase italic tracking-tighter">84 Active</p>
-              <p className="text-slate-400 text-sm">Researchers currently online</p>
+              {loading ? (
+                <Loader2 className="animate-spin text-primary" />
+              ) : (
+                <>
+                  <p className="text-4xl font-black text-white uppercase italic tracking-tighter">{stats?.totalActivity || 0} Aktif</p>
+                  <p className="text-white/50 text-xs font-bold uppercase tracking-widest">Aktivitas Terdaftar Sistem</p>
+                </>
+              )}
             </div>
-            <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
-              <div className="h-full bg-primary w-2/3" />
+            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: '75%' }}
+                className="h-full bg-primary" 
+              />
             </div>
           </motion.div>
         </div>
@@ -111,110 +139,123 @@ export default function LandingPage() {
 
       {/* Feature Section */}
       <section className="container mx-auto px-4 grid md:grid-cols-3 gap-8">
-        <div className="card p-8 group hover:-translate-y-2 transition-all duration-500">
-          <div className="w-16 h-16 bg-primary/10 rounded-3xl flex items-center justify-center text-primary mb-6 group-hover:rotate-12 transition-transform">
+        <div className="card p-10 group hover:-translate-y-2 transition-all duration-500 border-none bg-white shadow-[0_40px_80px_-20px_rgba(0,0,0,0.05)]">
+          <div className="w-16 h-16 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-500 mb-6 group-hover:rotate-12 transition-transform shadow-inner">
             <BookOpen size={32} />
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-4 tracking-tight">Journal of Research</h3>
-          <p className="text-slate-500 leading-relaxed text-sm">Access peer-reviewed articles and the latest scientific findings from our academic community.</p>
+          <h3 className="text-xl font-black text-slate-900 mb-4 tracking-tight uppercase italic">Penelitian Dosen</h3>
+          <p className="text-slate-500 leading-relaxed text-sm font-medium">Akses dan kelola publikasi ilmiah, penelitian inovatif, dan karya akademik dosen dalam satu wadah.</p>
           <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">2.4k Papers</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stats?.penelitian || 0} Terdaftar</span>
             <ArrowRight size={16} className="text-primary" />
           </div>
         </div>
 
-        <div className="card p-8 group hover:-translate-y-2 transition-all duration-500 bg-slate-900 shadow-slate-200">
-          <div className="w-16 h-16 bg-primary rounded-3xl flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform">
+        <div className="card p-10 group hover:-translate-y-2 transition-all duration-500 bg-slate-900 shadow-2xl shadow-indigo-200 border-none">
+          <div className="w-16 h-16 bg-primary rounded-3xl flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-primary/30">
             <Globe size={32} />
           </div>
-          <h3 className="text-xl font-bold text-white mb-4 tracking-tight">Community Service</h3>
-          <p className="text-slate-400 leading-relaxed text-sm">Join our initiatives to bridge academic knowledge with practical social impact in local communities through KKN programs.</p>
+          <h3 className="text-xl font-black text-white mb-4 tracking-tight uppercase italic">Pengabdian KKN</h3>
+          <p className="text-slate-400 leading-relaxed text-sm font-medium">Jembatani pengetahuan akademik dengan dampak sosial langsung bagi masyarakat melalui program KKN.</p>
           <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">128 Projects</span>
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{stats?.kkn || 0} Proyek</span>
             <ArrowRight size={16} className="text-primary" />
           </div>
         </div>
 
-        <div className="card p-8 group hover:-translate-y-2 transition-all duration-500">
-          <div className="w-16 h-16 bg-primary/10 rounded-3xl flex items-center justify-center text-primary mb-6 group-hover:-rotate-12 transition-transform">
+        <div className="card p-10 group hover:-translate-y-2 transition-all duration-500 border-none bg-white shadow-[0_40px_80px_-20px_rgba(0,0,0,0.05)]">
+          <div className="w-16 h-16 bg-rose-50 rounded-3xl flex items-center justify-center text-rose-500 mb-6 group-hover:-rotate-12 transition-transform shadow-inner">
             <BarChart3 size={32} />
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-4 tracking-tight">Academic Archive</h3>
-          <p className="text-slate-500 leading-relaxed text-sm">A centralized repository for student theses, field reports, and academic research data.</p>
+          <h3 className="text-xl font-black text-slate-900 mb-4 tracking-tight uppercase italic">Tugas Akhir</h3>
+          <p className="text-slate-500 leading-relaxed text-sm font-medium">Manajemen Seminar Proposal dan Skripsi yang efektif guna mempercepat kelulusan mahasiswa.</p>
           <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Digitalized</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Digitalized</span>
             <ArrowRight size={16} className="text-primary" />
           </div>
         </div>
       </section>
 
       {/* Stats and Announcements */}
-      <section className="container mx-auto px-4 grid lg:grid-cols-3 gap-12 pt-12 items-start">
-        <div className="lg:col-span-2 space-y-12">
-          <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight italic">Portal Stats</h2>
-            <div className="px-4 py-1.5 bg-slate-100 rounded-full text-slate-500 text-xs font-bold uppercase tracking-widest">Live Updates</div>
+      <section className="container mx-auto px-4 grid lg:grid-cols-3 gap-16 pt-12 items-start">
+        <div className="lg:col-span-2 space-y-16">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-8">
+            <div>
+               <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Laman Statistik</h2>
+               <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-2">Data Realtime dari Database Supabase</p>
+            </div>
+            <div className="px-5 py-2 bg-slate-900 text-white rounded-full text-[9px] font-black uppercase tracking-[0.2em] animate-pulse">Live Sync</div>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {[
-              { label: 'Mahasiswa Aktif', value: '1.2k', sub: '+12 this month', icon: Users },
-              { label: 'Dosen Pembimbing', value: '45', sub: 'Verified mentors', icon: GraduationCap },
-              { label: 'Proyek KKN', value: '850', sub: 'Completed reports', icon: BarChart3 }
+              { label: 'Mahasiswa', value: stats?.mahasiswaCount || 0, sub: 'Terverifikasi', color: 'bg-blue-50 text-blue-500', icon: Users },
+              { label: 'Dosen', value: stats?.dosenCount || 0, sub: 'Pembimbing Aktif', color: 'bg-primary/10 text-primary', icon: GraduationCap },
+              { label: 'Total Aktivitas', value: stats?.totalActivity || 0, sub: 'KKN, Skripsi, Riset', color: 'bg-orange-50 text-orange-500', icon: BarChart3 }
             ].map((stat, i) => (
-              <div key={i} className="card p-8 border-none bg-slate-50 shadow-sm hover:shadow-md transition-all">
-                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-primary mb-4">
-                  <stat.icon size={20} />
+              <div key={i} className="card p-10 border-none bg-white shadow-[0_30px_60px_-15px_rgba(0,0,0,0.05)] hover:shadow-xl transition-all group">
+                <div className={`w-12 h-12 ${stat.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                  <stat.icon size={22} />
                 </div>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">{stat.label}</p>
-                <p className="text-4xl font-bold text-slate-900 tracking-tighter mb-1 uppercase italic">{stat.value}</p>
-                <p className="text-xs text-primary font-medium">{stat.sub}</p>
+                <p className="text-slate-400 text-xs font-black uppercase tracking-widest mb-2">{stat.label}</p>
+                <p className="text-5xl font-black text-slate-900 tracking-tighter mb-1 uppercase italic">{stat.value}</p>
+                <div className="flex items-center space-x-2">
+                   <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                   <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">{stat.sub}</p>
+                </div>
               </div>
             ))}
           </div>
 
-          <div className="card-gradient p-10 shadow-2xl relative overflow-hidden">
-            <div className="relative z-10 space-y-4">
-              <h3 className="text-2xl font-bold text-slate-900 italic">Ready to contribute?</h3>
-              <p className="text-slate-600 max-w-lg">Bergabunglah dengan ribuan akademisi lainnya dalam membangun masa depan riset Indonesia yang lebih inklusif.</p>
-              <div className="pt-4">
+          <div className="card bg-slate-900 p-12 shadow-3xl relative overflow-hidden group">
+            <div className="relative z-10 space-y-6">
+              <div className="inline-block px-4 py-1.5 bg-primary/20 text-primary rounded-full text-[10px] font-black uppercase tracking-widest mb-2">Collaboration</div>
+              <h3 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">Bergabung dengan Kami</h3>
+              <p className="text-slate-400 max-w-lg font-medium">Berdampingan membangun ekosistem akademik yang unggul dan berkontribusi nyata bagi bangsa.</p>
+              <div className="pt-6">
                 <Link 
                   to={isLoggedIn ? getDashboardPath() : "/register"} 
-                  className="btn-primary px-10 py-4 shadow-xl inline-block text-center"
+                  className="px-12 py-5 bg-primary hover:bg-primary-dark text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-2xl shadow-primary/30 inline-block transition-all hover:scale-105 active:scale-95"
                 >
-                  {isLoggedIn ? 'Go to Dashboard' : 'Join Research Team'}
+                  {isLoggedIn ? 'Buka Dashboard' : 'Daftar Sekarang'}
                 </Link>
               </div>
             </div>
-            <div className="absolute right-0 bottom-0 opacity-10 blur-xl">
-              <Globe size={300} />
+            <div className="absolute right-0 bottom-0 opacity-10 blur-xl group-hover:scale-110 transition-transform duration-1000">
+              <Globe size={400} className="text-white" />
             </div>
           </div>
         </div>
 
-        <div className="space-y-8 h-full">
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight italic">Announcements</h2>
-          <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-            {[
-              { date: 'Oct 24', title: 'Pendaftaran KKN Semester Ganjil 2024', tag: 'Academic' },
-              { date: 'Oct 20', title: 'Seminar Nasional Pengabdian Masyarakat', tag: 'Event' },
-              { date: 'Oct 15', title: 'Workshop Penulisan Jurnal Internasional', tag: 'Workshop' },
-              { date: 'Oct 10', title: 'Jadwal Skripsi dan Yudisium Gelombang 2', tag: 'Deadline' }
-            ].map((item, i) => (
-              <div key={i} className="card p-6 border-slate-100 hover:border-primary/30 transition-all flex group cursor-pointer">
-                <div className="text-center pr-6 mr-6 border-r border-slate-100 min-w-[70px]">
-                  <p className="text-lg font-bold text-slate-900 leading-none">{item.date.split(' ')[1]}</p>
-                  <p className="text-[10px] text-slate-400 uppercase font-bold mt-1 tracking-tighter">{item.date.split(' ')[0]}</p>
+        <div className="space-y-10">
+          <div className="flex items-end justify-between border-b border-slate-100 pb-8">
+             <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Pengumuman</h2>
+             <Link to="/pengumuman" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Semua</Link>
+          </div>
+          <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2 side-scrollbar">
+            {announcements.length === 0 ? (
+               <div className="card p-10 text-center border-dashed border-2">
+                  <Calendar className="mx-auto text-slate-200 mb-4" size={40} />
+                  <p className="text-xs text-slate-300 font-black uppercase tracking-widest">Belum ada pengumuman</p>
+               </div>
+            ) : (
+              announcements.map((item, i) => (
+                <div key={i} className="card p-8 border-slate-100 hover:border-primary/30 transition-all flex group cursor-pointer bg-white">
+                  <div className="text-center pr-8 mr-8 border-r border-slate-100 min-w-[80px]">
+                    <p className="text-2xl font-black text-slate-900 leading-none">{new Date(item.created_at).getDate()}</p>
+                    <p className="text-[10px] text-slate-400 uppercase font-black mt-2 tracking-widest">{new Date(item.created_at).toLocaleString('id-ID', { month: 'short' })}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <span className="px-3 py-1 bg-slate-50 text-slate-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-slate-100">{item.tag}</span>
+                    <p className="text-base font-black text-slate-800 leading-tight group-hover:text-primary transition-colors italic uppercase">{item.title}</p>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{item.tag}</span>
-                  <p className="text-sm font-semibold text-slate-800 leading-snug group-hover:text-primary transition-colors">{item.title}</p>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </section>
     </div>
   );
 }
+

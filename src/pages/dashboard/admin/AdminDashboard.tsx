@@ -12,6 +12,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { kknService } from '@/src/services/kknService';
 import { semproService } from '@/src/services/semproService';
 import { skripsiService } from '@/src/services/skripsiService';
+import { publicService } from '@/src/services/publicService';
 import { supabase } from '@/src/lib/supabase';
 
 // Admin Sections
@@ -22,19 +23,24 @@ const AdminSkripsi = lazy(() => import('./sections/AdminSkripsi'));
 const AdminPenelitian = lazy(() => import('./sections/AdminPenelitian'));
 const AdminPengabdian = lazy(() => import('./sections/AdminPengabdian'));
 const AdminDokumentasi = lazy(() => import('./sections/AdminDokumentasi'));
+const AdminUsers = lazy(() => import('./sections/AdminUsers'));
+const AdminAnnouncements = lazy(() => import('./sections/AdminAnnouncements'));
+const AdminGuides = lazy(() => import('./sections/AdminGuides'));
 
 export default function AdminDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const menus = [
     { id: 'overview', name: 'Dashboard', path: '/dashboard/admin', icon: BarChart3 },
-    { id: 'kkn', name: 'Manajemen KKN', path: '/dashboard/admin/kkn', icon: Globe },
+    { id: 'kkn', name: 'Kelola KKN', path: '/dashboard/admin/kkn', icon: Globe },
     { id: 'penelitian', name: 'Penelitian Dosen', path: '/dashboard/admin/penelitian', icon: FlaskConical },
     { id: 'pengabdian', name: 'Pengabdian Dosen', path: '/dashboard/admin/pengabdian', icon: HeartHandshake },
-    { id: 'dokumentasi', name: 'Dokumentasi', path: '/dashboard/admin/dokumentasi', icon: FileText },
+    { id: 'dokumentasi', name: 'Kelola Dokumentasi', path: '/dashboard/admin/dokumentasi', icon: FileText },
     { id: 'sempro', name: 'Seminar Proposal', path: '/dashboard/admin/sempro', icon: BookOpen },
     { id: 'skripsi', name: 'Skripsi Mahasiswa', path: '/dashboard/admin/skripsi', icon: GraduationCap },
-    { id: 'users', name: 'Kelola Pengguna', path: '/dashboard/admin/users', icon: Users },
+    { id: 'announcements', name: 'Kelola Pengumuman', path: '/dashboard/admin/announcements', icon: Bell },
+    { id: 'guides', name: 'Kelola Panduan', path: '/dashboard/admin/guides', icon: Layers },
+    { id: 'users', name: 'Manajemen User', path: '/dashboard/admin/users', icon: Users },
   ];
 
   return (
@@ -42,7 +48,11 @@ export default function AdminDashboard() {
       {/* Mobile Header */}
       <div className="lg:hidden h-20 bg-white border-b border-slate-100 flex items-center justify-between px-6 sticky top-0 z-50">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-bold italic">STAI</div>
+          <img 
+            src="https://res.cloudinary.com/dlvvzsyzv/image/upload/q_auto/f_auto/v1779118998/images_nvrkgt.jpg" 
+            alt="Logo" 
+            className="w-8 h-8 rounded-lg object-contain bg-slate-50 p-1"
+          />
           <span className="font-black text-xs uppercase tracking-widest italic text-slate-900">Admin Panel</span>
         </div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 bg-slate-50 rounded-xl text-slate-900">
@@ -60,7 +70,14 @@ export default function AdminDashboard() {
             className="fixed inset-0 z-40 lg:hidden bg-slate-900 p-6 flex flex-col space-y-4"
           >
              <div className="flex justify-between items-center mb-10">
-                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold italic">STAI</div>
+                <div className="flex items-center space-x-3">
+                  <img 
+                    src="https://res.cloudinary.com/dlvvzsyzv/image/upload/q_auto/f_auto/v1779118998/images_nvrkgt.jpg" 
+                    alt="Logo" 
+                    className="w-10 h-10 rounded-xl object-contain bg-white p-1"
+                  />
+                  <span className="font-black text-xs uppercase tracking-widest italic text-white">PPPM Admin</span>
+                </div>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="text-white ring-1 ring-white/20 p-2 rounded-xl">Tutup</button>
              </div>
              <div className="flex-grow space-y-2 overflow-y-auto pr-2">
@@ -125,10 +142,14 @@ export default function AdminDashboard() {
           
           <div className="mt-auto pt-6 space-y-3">
             <div className="p-4 bg-primary rounded-[24px] flex items-center space-x-3 shadow-xl">
-              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-primary font-bold italic shadow-md shrink-0">A</div>
+              <img 
+                src="https://res.cloudinary.com/dlvvzsyzv/image/upload/q_auto/f_auto/v1779118998/images_nvrkgt.jpg" 
+                alt="Logo" 
+                className="w-10 h-10 rounded-xl object-contain bg-white p-1 shadow-md shrink-0"
+              />
               <div className="overflow-hidden">
-                <div className="text-[10px] font-black text-white truncate">Administrator</div>
-                <div className="text-[9px] font-bold text-white/60 uppercase tracking-tighter">Super Admin Control</div>
+                <div className="text-[10px] font-black text-white truncate uppercase tracking-tighter">Administrator</div>
+                <div className="text-[9px] font-bold text-white/60 uppercase tracking-tighter">PPPM Portal Admin</div>
               </div>
             </div>
             <button 
@@ -163,7 +184,9 @@ export default function AdminDashboard() {
               <Route path="dokumentasi" element={<AdminDokumentasi />} />
               <Route path="sempro" element={<AdminSempro />} />
               <Route path="skripsi" element={<AdminSkripsi />} />
-              <Route path="users" element={<div className="card p-10 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">User Management Under Construction</div>} />
+              <Route path="announcements" element={<AdminAnnouncements />} />
+              <Route path="guides" element={<AdminGuides />} />
+              <Route path="users" element={<AdminUsers />} />
             </Routes>
           </Suspense>
         </div>
@@ -184,23 +207,19 @@ function AdminOverview() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [kkn, sempro, skripsi, profiles] = await Promise.all([
-        kknService.getRegistrations(),
-        semproService.getRegistrations(),
-        skripsiService.getRegistrations(),
-        supabase.from('profiles').select('id', { count: 'exact' })
-      ]);
-
-      setStatsData(prev => ({
-        ...prev,
-        mahasiswa: profiles.count || 0,
-        kknAktif: kkn.filter(r => r.status !== 'COMPLETED' && r.status !== 'REJECTED').length,
-        semproAktif: sempro.filter(r => r.status !== 'COMPLETED' && r.status !== 'REJECTED').length,
-        skripsiAktif: skripsi.filter(r => r.status !== 'COMPLETED' && r.status !== 'REJECTED').length,
-        alerts: kkn.filter(r => r.status === 'SUBMITTED').length + 
-                sempro.filter(r => r.status === 'SUBMITTED').length +
-                skripsi.filter(r => r.status === 'SUBMITTED').length
-      }));
+      try {
+        const stats = await publicService.getGlobalStats();
+        setStatsData({
+          mahasiswa: stats.mahasiswaCount,
+          penelitian: stats.penelitian,
+          kknAktif: stats.kkn,
+          semproAktif: stats.sempro,
+          skripsiAktif: stats.skripsi,
+          alerts: 0 // Keep 0 or calculate if needed
+        });
+      } catch (e) {
+        console.error('Admin stats fetch error:', e);
+      }
     };
     fetchData();
   }, []);
@@ -229,11 +248,11 @@ function AdminOverview() {
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
             <span>System Priority: Stable</span>
           </div>
-          <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Main Console <span className="text-primary italic">Admin</span></h1>
+          <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Konsol Utama <span className="text-primary italic">Admin</span></h1>
           <p className="text-slate-500 font-medium">Monitoring sistem portal akademik secara menyeluruh.</p>
         </div>
-        <div className="flex items-center space-x-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-           Last sync: Just now
+        <div className="flex items-center space-x-3 text-xs font-bold text-slate-400 uppercase tracking-widest">
+           Sinkronisasi: Baru Saja
         </div>
       </div>
 
@@ -257,16 +276,18 @@ function AdminOverview() {
       <div className="grid lg:grid-cols-3 gap-10">
          <div className="lg:col-span-2 space-y-6">
             <h3 className="font-bold text-slate-900 italic flex items-center">
-               <Layers size={18} className="mr-2 text-primary" /> Quick Access Modules
+               <Layers size={18} className="mr-2 text-primary" /> Modul Akses Cepat
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                {[
-                 { label: 'Manajemen KKN', path: '/dashboard/admin/kkn', icon: Globe, color: 'hover:border-primary' },
+                 { label: 'Kelola KKN', path: '/dashboard/admin/kkn', icon: Globe, color: 'hover:border-primary' },
                  { label: 'Seminar Proposal', path: '/dashboard/admin/sempro', icon: BookOpen, color: 'hover:border-blue-500' },
                  { label: 'Skripsi Mahasiswa', path: '/dashboard/admin/skripsi', icon: GraduationCap, color: 'hover:border-green-500' },
                  { label: 'Penelitian Dosen', path: '/dashboard/admin/penelitian', icon: FlaskConical, color: 'hover:border-orange-500' },
                  { label: 'Pengabdian Dosen', path: '/dashboard/admin/pengabdian', icon: HeartHandshake, color: 'hover:border-red-500' },
-                 { label: 'Dokumentasi', path: '/dashboard/admin/dokumentasi', icon: FileText, color: 'hover:border-slate-500' },
+                 { label: 'Kelola Dokumentasi', path: '/dashboard/admin/dokumentasi', icon: FileText, color: 'hover:border-slate-500' },
+                 { label: 'Kelola Pengumuman', path: '/dashboard/admin/announcements', icon: Bell, color: 'hover:border-sky-500' },
+                 { label: 'Kelola Panduan', path: '/dashboard/admin/guides', icon: Layers, color: 'hover:border-amber-500' },
                ].map((mod, idx) => (
                  <Link key={idx} to={mod.path} className={cn("card p-6 flex flex-col items-center justify-center space-y-3 transition-all border-transparent border-2 shadow-sm", mod.color)}>
                     <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-primary">
@@ -302,7 +323,7 @@ function AdminOverview() {
          </div>
 
          <div className="space-y-6">
-            <h3 className="font-bold text-slate-900 italic">System Feed</h3>
+            <h3 className="font-bold text-slate-900 italic">Aktivitas Terbaru</h3>
             <div className="card p-8 space-y-8 max-h-[360px] overflow-y-auto side-scrollbar bg-slate-50 border-none shadow-inner">
                {[1, 2, 3, 4, 5, 6].map((i) => (
                  <div key={i} className="flex space-x-4 relative">
