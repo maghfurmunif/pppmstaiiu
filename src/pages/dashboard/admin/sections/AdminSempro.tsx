@@ -123,22 +123,39 @@ export default function AdminSempro() {
                   <div className="card p-8 space-y-6">
                      <h3 className="font-bold italic">Validasi Dokumentasi Seminar</h3>
                      <p className="text-xs text-slate-400">Mahasiswa telah mengunggah bukti seminar.</p>
-                     {selectedReg.proof && (
-                        <button 
-                          onClick={() => window.open(selectedReg.proof, '_blank')}
-                          className="btn-primary w-full py-4 bg-slate-800 mb-2"
-                        >
-                          <Eye size={14} className="mr-2" /> Lihat Bukti Dokumentasi
-                        </button>
-                     )}
+                     
+                     <div className="grid grid-cols-2 gap-4">
+                        {(selectedReg.postSeminar?.dokumentasi || []).map((url, i) => (
+                           <div key={i} className="aspect-video rounded-xl overflow-hidden border border-slate-100 group relative">
+                              <img src={url} className="w-full h-full object-cover" />
+                              <button onClick={() => window.open(url, '_blank')} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                                 <Eye className="text-white" />
+                              </button>
+                           </div>
+                        ))}
+                     </div>
+
+                     <div className="space-y-2">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Catatan Perbaikan</p>
+                        <div className="flex gap-2 flex-wrap">
+                           {(selectedReg.postSeminar?.catatan || []).map((url, i) => (
+                              <button key={i} onClick={() => window.open(url, '_blank')} className="flex items-center space-x-2 px-4 py-2 bg-slate-50 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-all border border-slate-200">
+                                 <FileText size={14} />
+                                 <span>Catatan {i+1}</span>
+                              </button>
+                           ))}
+                        </div>
+                     </div>
+
                      <button 
                        onClick={async () => {
-                         const updated = { ...selectedReg, status: 'COMPLETED' as const, grade: 'A-' };
+                         const grade = prompt('Berikan Nilai Akhir (contoh: A-):', 'A-') || 'A-';
+                         const updated = { ...selectedReg, status: 'COMPLETED' as const, grade };
                          await semproService.saveRegistration(updated);
                          refresh();
                        }}
                        className="btn-primary w-full py-5"
-                     >Approve & Beri Nilai Akhir</button>
+                     >Setujui & Beri Nilai Akhir</button>
                   </div>
                 )}
              </div>

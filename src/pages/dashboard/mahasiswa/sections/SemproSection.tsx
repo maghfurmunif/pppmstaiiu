@@ -28,6 +28,12 @@ export default function SemproSection() {
       if (!userId) return;
       const data = await semproService.getRegistrationByStudent(userId);
       setRegistration(data);
+      if (data?.postSeminar) {
+        setPostDocs({
+          dokumentasi: data.postSeminar.dokumentasi || [],
+          catatan: data.postSeminar.catatan || []
+        });
+      }
       setLoading(false);
     };
     fetchData();

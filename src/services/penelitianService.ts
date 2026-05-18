@@ -78,40 +78,81 @@ export interface DosenDokumentasi {
 
 export const penelitianService = {
   getRegistrations: async (): Promise<PenelitianRegistration[]> => {
-    const { data, error } = await supabase
+    // Stage 1: Get registrations
+    const { data: regs, error: regError } = await supabase
       .from('penelitian_registrations')
-      .select('*, profiles(full_name)');
+      .select('*');
     
-    if (error) {
-      console.error('Error fetching penelitian registrations:', error);
+    if (regError) {
+      console.error('Error fetching penelitian registrations:', regError);
       return [];
     }
 
-    return (data || []).map(r => ({
+    if (!regs || regs.length === 0) return [];
+
+    // Stage 2: Get profiles
+    const dosenIds = Array.from(new Set(regs.map(r => r.dosen_id)));
+    const { data: profiles, error: profError } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', dosenIds);
+
+    const profileMap = (profiles || []).reduce((acc: any, p) => {
+      acc[p.id] = p.full_name;
+      return acc;
+    }, {});
+
+    return regs.map(r => ({
       ...r,
       dosenId: r.dosen_id,
-      dosenName: r.profiles?.full_name || 'Dosen',
-      logbooks: r.logbooks || []
+      dosenName: profileMap[r.dosen_id] || 'Dosen Academic',
+      logbooks: r.logbooks || [],
+      semproInfo: r.sempro_info,
+      semproProof: r.sempro_proof,
+      finalSemproInfo: r.final_sempro_info,
+      finalSemproProof: r.final_sempro_proof,
+      resultFile: r.result_file,
+      finalRevisionFile: r.final_revision_file,
+      rejectionReason: r.rejection_reason,
+      proposalFile: r.proposal_file
     }));
   },
 
   getRegistrationByDosen: async (dosenId: string): Promise<PenelitianRegistration | null> => {
-    const { data, error } = await supabase
+    // Stage 1: Get registration
+    const { data: reg, error: regError } = await supabase
       .from('penelitian_registrations')
-      .select('*, profiles(full_name)')
+      .select('*')
       .eq('dosen_id', dosenId)
-      .single();
+      .maybeSingle();
     
-    if (error) {
-      if (error.code !== 'PGRST116') console.error('Error fetching penelitian registration:', error);
+    if (regError) {
+      console.error('Error fetching penelitian registration:', regError);
       return null;
     }
 
+    if (!reg) return null;
+
+    // Stage 2: Get profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', dosenId)
+      .maybeSingle();
+
     return {
-      ...data,
-      dosenId: data.dosen_id,
-      dosenName: data.profiles?.full_name || 'Dosen',
-      logbooks: data.logbooks || []
+      ...reg,
+      dosenId: reg.dosen_id,
+      dosenName: profile?.full_name || 'Dosen Academic',
+      logbooks: reg.logbooks || [],
+      semproInfo: reg.sempro_info,
+      semproProof: reg.sempro_proof,
+      finalSemproInfo: reg.final_sempro_info,
+      finalSemproProof: reg.final_sempro_proof,
+      resultFile: reg.result_file,
+      finalRevisionFile: reg.final_revision_file,
+      rejectionReason: reg.rejection_reason,
+      proposalFile: reg.proposal_file
     };
   },
 
