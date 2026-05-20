@@ -14,7 +14,8 @@ export default function LoginPage() {
   useEffect(() => {
     // If already logged in, redirect to appropriate dashboard
     const savedRole = localStorage.getItem('user_role');
-    if (savedRole) {
+    const savedId = localStorage.getItem('user_id');
+    if (savedRole && savedId) {
       if (savedRole === 'ADMIN') navigate('/dashboard/admin');
       else if (savedRole === 'DOSEN') navigate('/dashboard/dosen');
       else navigate('/dashboard/mahasiswa');
@@ -77,7 +78,7 @@ export default function LoginPage() {
         <div className="glass-morphism border-white/40 shadow-2xl p-10 space-y-8 rounded-[40px]">
           <div className="text-center space-y-3">
             <div className="w-16 h-16 bg-primary rounded-2xl mx-auto flex items-center justify-center text-white font-bold italic text-2xl shadow-lg mb-4">STAI</div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight italic">Welcome Back</h1>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight italic">Selamat Datang</h1>
             <p className="text-slate-500 text-sm">Masuk ke portal akademik PPPM STAI Ihyaul Ulum</p>
           </div>
 
@@ -108,7 +109,7 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <div className="flex justify-between items-center ml-1">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] block">Password</label>
-                  <button type="button" className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Forgot?</button>
+                  <button type="button" className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Lupa?</button>
                 </div>
                 <div className="relative group">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none" size={18} />
@@ -128,14 +129,14 @@ export default function LoginPage() {
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <>Sign In to Portal <ArrowRight size={18} className="ml-2" /></>
+                <>Masuk Ke Portal <ArrowRight size={18} className="ml-2" /></>
               )}
             </button>
           </form>
 
           <div className="pt-6 border-t border-slate-200/50 text-center">
             <p className="text-sm text-slate-500">
-              New to the portal? <Link to="/register" className="text-primary font-bold hover:underline italic">Create Account</Link>
+              Baru di portal akademik? <Link to="/register" className="text-primary font-bold hover:underline italic">Buat Akun Baru</Link>
             </p>
           </div>
         </div>

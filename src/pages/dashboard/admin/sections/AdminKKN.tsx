@@ -46,7 +46,7 @@ export default function AdminKKN() {
   if (loading) return (
      <div className="flex flex-col items-center justify-center py-20 italic text-slate-400 font-bold uppercase tracking-widest text-xs space-y-4">
         <Loader2 className="animate-spin text-primary" size={40} />
-        <p>Syncing Community Service Data...</p>
+        <p>Menyelaraskan Data KKN...</p>
      </div>
   );
 
@@ -56,7 +56,7 @@ export default function AdminKKN() {
         <div className="space-y-0.5">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest mb-2">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            <span>HQ Command Center</span>
+            <span>Pusat Kontrol Utama KKN</span>
           </div>
           <h1 className="text-4xl font-bold text-slate-900 tracking-tight uppercase italic underline decoration-primary/30 underline-offset-8">
             Manajemen KKN
@@ -68,7 +68,7 @@ export default function AdminKKN() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={16} />
               <input 
                 type="text" 
-                placeholder="Search Candidate..." 
+                placeholder="Cari Mahasiswa..." 
                 className="input-field pl-12 py-4 w-72 text-xs font-bold uppercase tracking-widest border-slate-200 focus:w-80 transition-all bg-white shadow-sm" 
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -186,16 +186,16 @@ export default function AdminKKN() {
                       <div className="card p-20 text-center bg-slate-900 text-white border-none shadow-2xl relative overflow-hidden">
                          <div className="absolute inset-0 bg-green-500/5" />
                          <CheckCircle2 size={80} className="text-primary mx-auto mb-8 animate-in zoom-in spin-in duration-700" />
-                         <h3 className="text-4xl font-black italic uppercase tracking-tighter text-white">Yudisium Completed</h3>
-                         <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px] mt-4 italic">Candidate has fulfilled and defended all academic requirements.</p>
+                         <h3 className="text-4xl font-black italic uppercase tracking-tighter text-white">Yudisium Selesai</h3>
+                         <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px] mt-4 italic">Mahasiswa telah memenuhi dan mempertahankan semua persyaratan akademik.</p>
                          
                          <div className="mt-12 grid grid-cols-2 gap-6 relative z-10">
                             <div className="p-6 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-md">
-                               <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-1">Final Score</p>
-                               <span className="text-3xl font-black text-white italic">{selectedReg.grades?.total.toFixed(1)}</span>
+                               <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-1">Nilai Akhir</p>
+                               <span className="text-3xl font-black text-white italic">{(selectedReg.grades?.total ?? 0).toFixed(1)}</span>
                             </div>
                             <div className="p-6 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-md">
-                               <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-1">Final Grade</p>
+                               <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-1">Huruf Mutu</p>
                                <span className="text-3xl font-black text-white italic">{selectedReg.grades?.gradeText}</span>
                             </div>
                          </div>
@@ -207,17 +207,17 @@ export default function AdminKKN() {
                   {selectedReg.info && (
                     <div className="card p-10 grid grid-cols-2 lg:grid-cols-4 gap-10 bg-white shadow-xl shadow-slate-200/50">
                        {[
-                         { label: 'Deployed Location', value: selectedReg.info.lokasi, icon: MapPin },
-                         { label: 'Tactical Group', value: selectedReg.info.kelompok, icon: Users },
-                         { label: 'Lead Supervisor (DPL)', value: selectedReg.info.dpl, icon: UserCircle },
-                         { label: 'Socialization Sync', value: selectedReg.info.tglSosialisasi, icon: Calendar },
+                         { label: 'Lokasi Penempatan', value: selectedReg.info.lokasi, icon: MapPin },
+                         { label: 'Kelompok KKN', value: selectedReg.info.kelompok, icon: Users },
+                         { label: 'Dosen Pembimbing (DPL)', value: selectedReg.info.dpl, icon: UserCircle },
+                         { label: 'Tanggal Sosialisasi', value: selectedReg.info.tglSosialisasi, icon: Calendar },
                        ].map((item, i) => (
                          <div key={i} className="space-y-3">
                             <div className="flex items-center space-x-2">
                                <item.icon size={14} className="text-primary" />
                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</p>
                             </div>
-                            <p className="text-md font-black text-slate-900 italic tracking-tight">{item.value || 'UNASSIGNED'}</p>
+                            <p className="text-md font-black text-slate-900 italic tracking-tight">{item.value || 'BELUM DIATUR'}</p>
                          </div>
                        ))}
                     </div>
@@ -230,8 +230,8 @@ export default function AdminKKN() {
                       <Users size={80} className="text-slate-200 scale-125" />
                       <Search size={32} className="text-primary absolute -right-2 -bottom-2 bg-white rounded-full p-1 shadow-lg" />
                    </div>
-                   <h3 className="text-2xl font-black text-slate-300 uppercase tracking-[0.4em] italic leading-tight">Awaiting Candidate <br/> Selection</h3>
-                   <p className="text-slate-400 text-xs font-bold mt-6 max-w-xs leading-relaxed">Select a military-grade record from the explorer list to perform administrative audits.</p>
+                   <h3 className="text-2xl font-black text-slate-300 uppercase tracking-[0.4em] italic leading-tight">Menunggu Pemilihan <br/> Mahasiswa</h3>
+                   <p className="text-slate-400 text-xs font-bold mt-6 max-w-xs leading-relaxed">Pilih mahasiswa dari daftar eksplorer untuk melakukan audit administrasi.</p>
                 </div>
               )}
            </AnimatePresence>
@@ -387,15 +387,15 @@ function SurveyApproval({ reg, onAction }: { reg: KKNRegistration, onAction: () 
     <div className="card p-12 bg-white shadow-xl space-y-10 animate-in slide-in-from-left duration-500">
        <div className="flex justify-between items-center bg-slate-900 text-white p-8 rounded-[40px] shadow-2xl">
           <div className="space-y-1">
-             <h3 className="text-3xl font-black italic uppercase tracking-tighter leading-none">Intelligence Report (Survey)</h3>
-             <p className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mb-4 pl-1">Validation of field findings</p>
+             <h3 className="text-3xl font-black italic uppercase tracking-tighter leading-none">Laporan Survei Penempatan</h3>
+             <p className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mb-4 pl-1">Validasi temuan kondisi lapangan</p>
           </div>
           <Activity size={48} className="text-primary animate-pulse" />
        </div>
 
        <div className="grid md:grid-cols-2 gap-10">
           <div className="space-y-4">
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 italic">Socialization Intel</p>
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 italic">Foto Sosialisasi Lapangan</p>
              <div className="grid grid-cols-3 gap-3 p-4 bg-slate-50 rounded-[32px] border border-slate-100 min-h-[120px]">
                 {reg.surveyDocs?.sosialisasi?.map((url, i) => (
                    <div key={i} className="aspect-square bg-white rounded-2xl border flex items-center justify-center p-1 group relative overflow-hidden shadow-sm">
@@ -406,7 +406,7 @@ function SurveyApproval({ reg, onAction }: { reg: KKNRegistration, onAction: () 
              </div>
           </div>
           <div className="space-y-4">
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 italic">Field Survey Proof</p>
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 italic">Bukti Survei Lapangan</p>
              <div className="grid grid-cols-3 gap-3 p-4 bg-slate-50 rounded-[32px] border border-slate-100 min-h-[120px]">
                 {reg.surveyDocs?.survei?.map((url, i) => (
                    <div key={i} className="aspect-square bg-white rounded-2xl border flex items-center justify-center p-1 group relative overflow-hidden shadow-sm">
@@ -561,7 +561,7 @@ function LogbookApproval({ reg, onAction }: { reg: KKNRegistration, onAction: ()
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-3 italic pl-1">Live monitoring of candidate logbooks</p>
           </div>
           <div className="text-right">
-             <div className="text-6xl font-black italic text-primary tracking-tighter leading-none">{reg.totalHours.toFixed(1)}</div>
+             <div className="text-6xl font-black italic text-primary tracking-tighter leading-none">{(reg.totalHours ?? 0).toFixed(1)}</div>
              <span className="text-[10px] text-slate-400 uppercase tracking-widest font-black italic">Accumulated Hours</span>
           </div>
        </div>
@@ -724,7 +724,7 @@ function GradingBox({ reg, onAction }: { reg: KKNRegistration, onAction: () => v
           </div>
           <div className="text-right">
              <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-2 pr-1 leading-none">Simulated Result</p>
-             <div className="text-7xl font-black text-primary italic leading-none">{currentTotal.toFixed(1)}</div>
+             <div className="text-7xl font-black text-primary italic leading-none">{(currentTotal ?? 0).toFixed(1)}</div>
           </div>
        </div>
 

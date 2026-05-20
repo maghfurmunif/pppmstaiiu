@@ -198,12 +198,13 @@ export default function AdminDashboard() {
 function AdminOverview() {
   const [statsData, setStatsData] = useState({
     mahasiswa: 0,
-    penelitian: 45,
+    penelitian: 0,
     kknAktif: 0,
     alerts: 0,
     semproAktif: 0,
     skripsiAktif: 0
   });
+  const [activities, setActivities] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -215,8 +216,11 @@ function AdminOverview() {
           kknAktif: stats.kkn,
           semproAktif: stats.sempro,
           skripsiAktif: stats.skripsi,
-          alerts: 0 // Keep 0 or calculate if needed
+          alerts: 0
         });
+
+        const liveActs = await publicService.getRecentActivities();
+        setActivities(liveActs);
       } catch (e) {
         console.error('Admin stats fetch error:', e);
       }
@@ -225,12 +229,10 @@ function AdminOverview() {
   }, []);
 
   const data = [
-    { name: 'Jan', reports: 400 },
-    { name: 'Feb', reports: 300 },
-    { name: 'Mar', reports: 200 },
-    { name: 'Apr', reports: 278 },
-    { name: 'May', reports: 589 },
-    { name: 'Jun', reports: 239 },
+    { name: 'KKN', reports: statsData.kknAktif },
+    { name: 'Sempro', reports: statsData.semproAktif },
+    { name: 'Skripsi', reports: statsData.skripsiAktif },
+    { name: 'Penelitian', reports: statsData.penelitian },
   ];
 
   const stats = [
@@ -325,21 +327,21 @@ function AdminOverview() {
          <div className="space-y-6">
             <h3 className="font-bold text-slate-900 italic">Aktivitas Terbaru</h3>
             <div className="card p-8 space-y-8 max-h-[360px] overflow-y-auto side-scrollbar bg-slate-50 border-none shadow-inner">
-               {[1, 2, 3, 4, 5, 6].map((i) => (
-                 <div key={i} className="flex space-x-4 relative">
-                    {i !== 6 && <div className="absolute left-[13px] top-8 bottom-[-24px] w-0.5 bg-slate-200" />}
+               {activities.map((act, idx) => (
+                 <div key={act.id} className="flex space-x-4 relative">
+                    {idx !== activities.length - 1 && <div className="absolute left-[13px] top-8 bottom-[-24px] w-0.5 bg-slate-200" />}
                     <div className="w-7 h-7 rounded-full bg-white border-2 border-primary flex items-center justify-center shrink-0 z-10">
                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                     </div>
                     <div className="space-y-1">
-                       <p className="text-xs font-bold text-slate-700">Dosen Hanafi <span className="font-medium text-slate-400 italic">mengunggah jurnal baru</span></p>
-                       <p className="text-[9px] font-black text-primary uppercase tracking-widest opacity-60">10:42 AM • Research</p>
+                       <p className="text-xs font-bold text-slate-700">{act.name} <span className="font-medium text-slate-400 italic">{act.action}</span></p>
+                       <p className="text-[9px] font-black text-primary uppercase tracking-widest opacity-60">{act.time ? new Date(act.time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''} • {act.category} • {act.statusText}</p>
                     </div>
                  </div>
                ))}
             </div>
             <div className="card p-6 bg-slate-900 text-white text-center cursor-pointer hover:bg-slate-800 transition-colors">
-               <span className="text-[10px] font-black uppercase tracking-[0.3em]">Full Audit Log</span>
+               <span className="text-[10px] font-black uppercase tracking-[0.3em]">Log Audit Lengkap</span>
             </div>
          </div>
       </div>

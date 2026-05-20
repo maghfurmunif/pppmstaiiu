@@ -40,7 +40,7 @@ export default function App() {
               <Route 
                 path="/dashboard/mahasiswa/*" 
                 element={
-                  localStorage.getItem('user_role')?.toUpperCase() === 'MAHASISWA' 
+                  localStorage.getItem('user_role')?.toUpperCase() === 'MAHASISWA' && localStorage.getItem('user_id')
                     ? <MahasiswaDashboard /> 
                     : <Navigate to="/login" replace />
                 } 
@@ -48,7 +48,7 @@ export default function App() {
               <Route 
                 path="/dashboard/dosen/*" 
                 element={
-                  localStorage.getItem('user_role')?.toUpperCase() === 'DOSEN' 
+                  localStorage.getItem('user_role')?.toUpperCase() === 'DOSEN' && localStorage.getItem('user_id')
                     ? <DosenDashboard /> 
                     : <Navigate to="/login" replace />
                 } 
@@ -56,7 +56,7 @@ export default function App() {
               <Route 
                 path="/dashboard/admin/*" 
                 element={
-                  localStorage.getItem('user_role')?.toUpperCase() === 'ADMIN' 
+                  localStorage.getItem('user_role')?.toUpperCase() === 'ADMIN' && localStorage.getItem('user_id')
                     ? <AdminDashboard /> 
                     : <Navigate to="/login" replace />
                 } 

@@ -9,14 +9,15 @@ export default function Navbar() {
   const navigate = useNavigate();
   
   // Reactive check for logged in user
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('user_role'));
+  const [isLoggedIn, setIsLoggedIn] = useState(!!(localStorage.getItem('user_role') && localStorage.getItem('user_id')));
   const [userName, setUserName] = useState(localStorage.getItem('user_name') || 'Ahmad Maghfur');
   const [userRole, setUserRole] = useState(localStorage.getItem('user_role') || 'MAHASISWA');
 
   useEffect(() => {
     const handleStorageChange = () => {
       const role = localStorage.getItem('user_role');
-      setIsLoggedIn(!!role);
+      const userId = localStorage.getItem('user_id');
+      setIsLoggedIn(!!(role && userId));
       setUserName(localStorage.getItem('user_name') || 'Ahmad Maghfur');
       setUserRole(role || 'MAHASISWA');
     };

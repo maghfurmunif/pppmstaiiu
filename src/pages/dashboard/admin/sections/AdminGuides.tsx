@@ -68,7 +68,7 @@ export default function AdminGuides() {
         <div className="space-y-0.5">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest mb-2">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-            <span>Resource Knowledge Base</span>
+            <span>Ruang Panduan Materi</span>
           </div>
           <h1 className="text-4xl font-bold text-slate-900 tracking-tight uppercase italic underline decoration-primary/30 underline-offset-8">Kelola Panduan</h1>
           <p className="text-slate-500 font-medium pt-2">Manajemen dokumen referensi, SOP, dan file instruksi sistem.</p>
@@ -78,7 +78,7 @@ export default function AdminGuides() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={16} />
               <input 
                 type="text" 
-                placeholder="Search Assets..." 
+                placeholder="Cari Panduan..." 
                 className="input-field pl-12 py-4 w-64 text-xs font-black uppercase tracking-widest shadow-sm bg-white" 
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -89,7 +89,7 @@ export default function AdminGuides() {
              className="btn-primary h-14 px-8 rounded-2xl flex items-center space-x-3 shadow-xl transition-all hover:scale-105 active:scale-95 group"
            >
               <Plus size={20} className="group-hover:rotate-90 transition-transform" />
-              <span className="text-[11px] font-black uppercase tracking-widest hidden md:block">Add Resource</span>
+              <span className="text-[11px] font-black uppercase tracking-widest hidden md:block">Tambah Panduan</span>
            </button>
         </div>
       </div>
@@ -97,14 +97,14 @@ export default function AdminGuides() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 italic text-slate-400 font-bold uppercase tracking-widest text-xs space-y-4">
            <Loader2 className="animate-spin text-primary" size={40} />
-           <p>Indexing Resource Repository...</p>
+           <p>Mengindeks Ruang Panduan...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
            {filtered.length === 0 ? (
              <div className="col-span-full card p-20 text-center border-dashed border-2 m-4 rounded-[40px]">
                 <FileText size={48} className="mx-auto text-slate-200 mb-4" />
-                <p className="text-slate-300 font-black uppercase tracking-widest text-xs">No guides available in database.</p>
+                <p className="text-slate-300 font-black uppercase tracking-widest text-xs">Tidak ada panduan dalam basis data.</p>
              </div>
            ) : (
              filtered.map((guide, idx) => (
@@ -175,7 +175,7 @@ export default function AdminGuides() {
 
                 <form onSubmit={handleSave} className="space-y-6">
                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-4">Resource Nomenclature</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-4">Nama Panduan Kantor / SOP</label>
                       <input 
                         className="input-field py-5 px-6 font-bold uppercase tracking-widest italic" 
                         placeholder="Judul Panduan (mis: SOP KKN 2024)..."
@@ -185,7 +185,7 @@ export default function AdminGuides() {
                    </div>
 
                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-4">Download / CDN URL</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-4">Tautan Unduh File / Panduan</label>
                       <div className="relative group">
                          <LinkIcon className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                          <input 
@@ -203,7 +203,7 @@ export default function AdminGuides() {
                    </div>
 
                    <button type="submit" className="btn-primary w-full h-18 text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-primary/30 rounded-3xl mt-4 italic">
-                      Save Resource
+                      Simpan Panduan
                    </button>
                 </form>
              </motion.div>

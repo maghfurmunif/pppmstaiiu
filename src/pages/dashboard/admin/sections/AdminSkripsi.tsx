@@ -15,6 +15,18 @@ export default function AdminSkripsi() {
   const [selectedReg, setSelectedReg] = useState<SkripsiRegistration | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [naskahGrade, setNaskahGrade] = useState<string>('');
+  const [sidangGrade, setSidangGrade] = useState<string>('');
+
+  useEffect(() => {
+    if (selectedReg) {
+      setNaskahGrade(selectedReg.grades?.naskah?.toString() || '');
+      setSidangGrade(selectedReg.grades?.sidang?.toString() || '');
+    } else {
+      setNaskahGrade('');
+      setSidangGrade('');
+    }
+  }, [selectedReg?.id]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,42 +69,42 @@ export default function AdminSkripsi() {
   );
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 text-slate-900">
       <div className="flex justify-between items-end border-b border-slate-200 pb-8">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase italic underline decoration-primary underline-offset-8">Manajemen Skripsi</h1>
-          <p className="text-slate-500 font-medium text-xs mt-2 italic">Validasi berkas munaqosyah dan monitoring bimbingan mahasiswa.</p>
+          <p className="text-slate-500 font-medium text-xs mt-2 italic">Validasi berkas munaqosyah, monitoring bimbingan, verifikasi revisi final dan pencairan nilai mahasiswa.</p>
         </div>
-        <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
-           {registrations.length} Students Active
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+           {registrations.length} Mahasiswa Aktif
         </div>
       </div>
       
       <div className="grid lg:grid-cols-3 gap-10">
         <div className="space-y-3 max-h-[70vh] overflow-y-auto side-scrollbar pr-2">
-           {registrations.length === 0 ? (
-             <div className="card p-10 text-center border-dashed">
-                <Users className="mx-auto text-slate-200 mb-2" />
-                <p className="text-[9px] font-black text-slate-300 uppercase">No Data Found</p>
-             </div>
-           ) : (
-             registrations.map(reg => (
-               <button 
-                 key={reg.id} 
-                 onClick={() => setSelectedReg(reg)}
-                 className={cn(
-                   "w-full card p-5 text-left transition-all border-l-[6px] group",
-                   selectedReg?.id === reg.id ? "border-l-primary shadow-xl scale-[1.02] bg-white" : "border-l-slate-200 hover:border-l-slate-400"
-                 )}
-               >
-                  <div className="flex justify-between items-center mb-2">
-                     <StatusBadge status={reg.status} />
-                     <span className="text-[9px] font-bold text-slate-300 italic">#{reg.id.slice(0, 5)}</span>
-                  </div>
-                  <h4 className="font-bold text-slate-900 truncate group-hover:text-primary">{reg.studentName}</h4>
-               </button>
-             ))
-           )}
+            {registrations.length === 0 ? (
+              <div className="card p-10 text-center border-dashed">
+                 <Users className="mx-auto text-slate-300 mb-2" />
+                 <p className="text-[9px] font-black text-slate-400 uppercase">No Data Found</p>
+              </div>
+            ) : (
+              registrations.map(reg => (
+                <button 
+                  key={reg.id} 
+                  onClick={() => setSelectedReg(reg)}
+                  className={cn(
+                    "w-full card p-5 text-left transition-all border-l-[6px] group bg-white border border-slate-200 shadow-sm",
+                    selectedReg?.id === reg.id ? "border-l-primary shadow-xl scale-[1.02]" : "border-l-slate-300 hover:border-l-slate-400"
+                  )}
+                >
+                   <div className="flex justify-between items-center mb-2">
+                      <StatusBadge status={reg.status} />
+                      <span className="text-[9px] font-bold text-slate-400 italic">#{reg.id.slice(0, 5)}</span>
+                   </div>
+                   <h4 className="font-bold text-slate-900 truncate group-hover:text-primary">{reg.studentName}</h4>
+                </button>
+              ))
+            )}
         </div>
 
         <div className="lg:col-span-2">
@@ -108,30 +120,30 @@ export default function AdminSkripsi() {
                 <div className="card p-10 bg-slate-900 text-white flex justify-between items-center relative overflow-hidden">
                    <div className="relative z-10">
                       <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1">Administrative Review</p>
-                      <h2 className="text-3xl font-black italic tracking-tighter uppercase">{selectedReg.studentName}</h2>
+                      <h2 className="text-3xl font-black italic tracking-tighter uppercase text-white">{selectedReg.studentName}</h2>
                       <div className="flex items-center space-x-3 mt-4">
                          <StatusBadge status={selectedReg.status} className="bg-white/10 border-white/20 text-white" />
-                         {selectedReg.advisor && <span className="text-xs font-black italic text-primary">Advisor: {selectedReg.advisor.name}</span>}
+                         {selectedReg.advisor && <span className="text-xs font-black italic text-primary">Dosen Pembimbing: {selectedReg.advisor.name}</span>}
                       </div>
                    </div>
-                   <GraduationCap className="absolute -right-6 -bottom-6 opacity-10" size={140} />
+                   <GraduationCap className="absolute -right-6 -bottom-6 opacity-10 text-white" size={140} />
                 </div>
 
                  {selectedReg.status === 'SUBMITTED' && (
-                  <div className="card p-8 space-y-6 bg-white">
+                  <div className="card p-8 space-y-6 bg-white border border-slate-200 shadow-sm">
                      <h3 className="font-bold italic flex items-center text-slate-900 text-lg">
                        <FileText className="mr-2 text-primary" size={18} />
                        Validasi Syarat Pendaftaran
                      </h3>
                      <div className="grid grid-cols-2 gap-4">
                         {Object.entries(selectedReg.registrationDocs || {}).map(([k, v]) => (
-                          <div key={k} className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between border border-slate-100 group hover:border-primary/30 transition-all">
+                          <div key={k} className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between border border-slate-200 group hover:border-primary/30 transition-all">
                              <div className="flex flex-col">
                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{k}</span>
                                 <span className="text-[11px] font-bold text-slate-700 truncate max-w-[120px]">Document Provided</span>
                              </div>
                              {typeof v === 'string' && v.startsWith('http') ? (
-                               <button onClick={() => window.open(v, '_blank')} className="p-2 bg-white rounded-xl shadow-sm text-primary hover:scale-110 transition-all">
+                               <button onClick={() => window.open(v, '_blank')} className="p-2 bg-white rounded-xl shadow-sm text-primary hover:scale-110 transition-all border border-slate-200">
                                  <Eye size={14} />
                                </button>
                              ) : (
@@ -142,8 +154,8 @@ export default function AdminSkripsi() {
                      </div>
                      <div className="space-y-4 pt-6 border-t border-slate-100">
                         <div className="space-y-1">
-                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Plot Dosen Pembimbing</label>
-                           <input id="adv" placeholder="Input Nama Dosen Pembimbing..." className="input-field shadow-sm" defaultValue={selectedReg.advisor?.name || ''} />
+                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Plot Dosen Pembimbing</label>
+                           <input id="adv" placeholder="Input Nama Dosen Pembimbing..." className="input-field shadow-sm text-slate-900 bg-white font-bold border border-slate-200 h-12 px-3" defaultValue={selectedReg.advisor?.name || ''} />
                         </div>
                         <div className="flex gap-4">
                            <button 
@@ -157,9 +169,9 @@ export default function AdminSkripsi() {
                                  advisor: { name: adv }
                                }, `Advisor ${adv} telah diplot`);
                              }}
-                             className="btn-primary flex-grow h-14 uppercase tracking-widest text-[10px]"
+                             className="btn-primary flex-grow h-14 uppercase tracking-widest text-[10px] font-black"
                            >
-                             {actionLoading ? <Loader2 className="animate-spin" /> : 'Sahkan & Plot Advisor'}
+                             {actionLoading ? <Loader2 className="animate-spin text-white" /> : 'Sahkan & Plot Advisor'}
                            </button>
                            <button 
                              disabled={actionLoading}
@@ -168,7 +180,7 @@ export default function AdminSkripsi() {
                                if (!reason) return;
                                handleAction({ ...selectedReg, status: 'REJECTED' as any, rejectionReason: reason }, 'Pendaftaran ditolak');
                              }}
-                             className="btn-primary bg-red-600 flex-grow h-14 uppercase tracking-widest text-[10px]"
+                             className="btn-primary bg-red-600 flex-grow h-14 uppercase tracking-widest text-[10px] font-black text-white hover:bg-red-700"
                            >Tolak Berkas</button>
                         </div>
                      </div>
@@ -176,177 +188,372 @@ export default function AdminSkripsi() {
                 )}
 
                  {selectedReg.status === 'APPROVED' && (
-                    <div className="card p-20 text-center space-y-4 border-dashed">
+                    <div className="card p-20 text-center space-y-4 border-dashed bg-white border-slate-200">
                        <Clock className="text-primary opacity-20 mx-auto" size={48} />
                        <h3 className="font-bold text-slate-900 italic text-xl">Pendaftaran Disetujui</h3>
-                       <p className="text-slate-400 text-sm font-medium">Menunggu mahasiswa menyetujui dosen pembimbing ({selectedReg.advisor?.name}) dan memulai bimbingan.</p>
+                       <p className="text-slate-500 text-sm font-medium">Menunggu mahasiswa menyetujui dosen pembimbing ({selectedReg.advisor?.name}) dan memulai bimbingan.</p>
                        <div className="pt-4">
-                          <button onClick={() => refresh()} className="btn-primary py-2 px-6 text-[10px] bg-slate-100 text-slate-900 shadow-none border border-slate-200">Sync status...</button>
+                          <button onClick={() => refresh()} className="btn-primary py-2.5 px-6 text-[10px] bg-slate-100 text-slate-900 shadow-none border border-slate-200 font-bold">Sync status...</button>
                        </div>
                     </div>
                  )}
 
                  {selectedReg.status === 'PROGRESS' && (
-                   <div className="card p-8 space-y-8 bg-white">
-                      <div className="flex justify-between items-end border-b border-slate-100 pb-4">
-                         <div className="space-y-1">
-                            <h3 className="font-bold italic text-slate-900 flex items-center text-lg">
-                              <MessageSquare className="mr-2 text-primary" size={18} />
-                              Monitoring Jurnal Bimbingan
-                            </h3>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest pl-1">Minimal 10 kali bimbingan</p>
-                         </div>
-                         <div className="text-right">
-                            <p className="text-3xl font-black text-primary italic tracking-tighter">{selectedReg.logbooks.filter(l => l.status === 'APPROVED').length}</p>
-                            <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Approved Docs</p>
-                         </div>
-                      </div>
-                      <div className="space-y-4">
-                         {selectedReg.logbooks.length === 0 ? (
-                           <div className="text-center p-12 bg-slate-50 rounded-2xl border border-slate-100">
-                              <p className="text-xs text-slate-400 italic font-medium">Mahasiswa belum menginput progres bimbingan.</p>
-                           </div>
-                         ) : (
-                           selectedReg.logbooks.map(log => (
-                             <div key={log.id} className="p-5 bg-slate-50 rounded-[28px] flex justify-between items-center border border-slate-100 group hover:shadow-lg transition-all">
-                                <div className="flex items-center space-x-4">
-                                   <div className="p-3 bg-white rounded-2xl shadow-sm font-black text-primary text-[10px] border border-slate-100">
-                                      {log.date.split('-').slice(1).reverse().join('/')}
-                                   </div>
-                                   <div className="flex flex-col">
-                                      <div className="text-sm font-bold text-slate-800">{log.topic}</div>
-                                      {log.photo && (
-                                        <button 
-                                          onClick={() => window.open(log.photo, '_blank')}
-                                          className="text-[9px] font-black text-primary flex items-center mt-1 uppercase tracking-widest hover:underline"
-                                        >
-                                          <Eye size={10} className="mr-1" /> View Evidence
-                                        </button>
-                                      )}
-                                   </div>
-                                </div>
-                                {log.status === 'PENDING' ? (
-                                  <button 
-                                    disabled={actionLoading}
-                                    onClick={() => {
-                                      const updatedLogbooks = selectedReg.logbooks.map(l => 
-                                        l.id === log.id ? { ...l, status: 'APPROVED' as any } : l
-                                      );
-                                      handleAction({ ...selectedReg, logbooks: updatedLogbooks }, 'Logbook bimbingan diverifikasi');
-                                    }}
-                                    className="px-5 py-2 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-primary/20"
-                                  >Verify</button>
-                                ) : <span className="text-[10px] font-black text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-100 uppercase tracking-widest">Verified</span>}
-                             </div>
-                           ))
-                         )}
-                      </div>
-                      {selectedReg.logbooks.filter(l => l.status === 'APPROVED').length >= 10 && (
-                         <div className="p-5 bg-primary rounded-3xl text-white flex items-center space-x-4 shadow-2xl shadow-primary/20">
-                            <div className="p-3 bg-white/20 rounded-xl"><CheckCircle2 size={24} /></div>
-                            <div>
-                               <p className="font-black text-xs uppercase tracking-widest">Ready for Final Exam</p>
-                               <p className="text-[10px] font-medium opacity-80 italic">Mahasiswa telah memenuhi syarat bimbingan minimal. Menunggu pendaftaran Munaqosyah.</p>
+                    <div className="card p-8 space-y-8 bg-white border border-slate-200">
+                       <div className="flex justify-between items-end border-b border-slate-100 pb-4">
+                          <div className="space-y-1">
+                             <h3 className="font-bold italic text-slate-900 flex items-center text-lg">
+                               <MessageSquare className="mr-2 text-primary" size={18} />
+                               Monitoring Jurnal Bimbingan
+                             </h3>
+                             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest pl-1">Minimal 10 kali bimbingan</p>
+                          </div>
+                          <div className="text-right">
+                             <p className="text-3xl font-black text-primary italic tracking-tighter">{selectedReg.logbooks.filter(l => l.status === 'APPROVED').length}</p>
+                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Approved Docs</p>
+                          </div>
+                       </div>
+                       <div className="space-y-4">
+                          {selectedReg.logbooks.length === 0 ? (
+                            <div className="text-center p-12 bg-slate-50 rounded-2xl border border-slate-200">
+                               <p className="text-xs text-slate-500 italic font-medium">Mahasiswa belum menginput progres bimbingan.</p>
                             </div>
-                         </div>
-                      )}
-                   </div>
+                          ) : (
+                            selectedReg.logbooks.map(log => (
+                              <div key={log.id} className="p-5 bg-slate-50 rounded-[28px] flex justify-between items-center border border-slate-200 group hover:shadow-lg transition-all">
+                                 <div className="flex items-center space-x-4">
+                                    <div className="p-3 bg-white rounded-2xl shadow-sm font-black text-primary text-[10px] border border-slate-200">
+                                       {log.date.split('-').slice(1).reverse().join('/')}
+                                    </div>
+                                    <div className="flex flex-col">
+                                       <div className="text-sm font-bold text-slate-900">{log.topic}</div>
+                                       {log.photo && (
+                                         <button 
+                                           onClick={() => window.open(log.photo, '_blank')}
+                                           className="text-[9px] font-black text-primary flex items-center mt-1 uppercase tracking-widest hover:underline"
+                                         >
+                                           <Eye size={10} className="mr-1" /> View Evidence
+                                         </button>
+                                       )}
+                                    </div>
+                                 </div>
+                                 {log.status === 'PENDING' ? (
+                                   <button 
+                                     disabled={actionLoading}
+                                     onClick={() => {
+                                       const updatedLogbooks = selectedReg.logbooks.map(l => 
+                                         l.id === log.id ? { ...l, status: 'APPROVED' as any } : l
+                                       );
+                                       handleAction({ ...selectedReg, logbooks: updatedLogbooks }, 'Logbook bimbingan diverifikasi');
+                                     }}
+                                     className="px-5 py-2 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-primary/20"
+                                   >Verify</button>
+                                 ) : <span className="text-[10px] font-black text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-100 uppercase tracking-widest">Verified</span>}
+                              </div>
+                            ))
+                          )}
+                       </div>
+                       {selectedReg.logbooks.filter(l => l.status === 'APPROVED').length >= 10 && (
+                          <div className="p-5 bg-primary/10 border border-primary/20 rounded-3xl text-primary flex items-center space-x-4">
+                             <div className="p-3 bg-primary/20 rounded-xl text-primary"><CheckCircle2 size={24} /></div>
+                             <div>
+                                <p className="font-black text-xs uppercase tracking-widest">Ready for Final Exam</p>
+                                <p className="text-[10px] font-medium opacity-80 italic">Mahasiswa telah memenuhi syarat bimbingan minimal. Menunggu pendaftaran Munaqosyah.</p>
+                             </div>
+                          </div>
+                       )}
+                    </div>
                  )}
 
                  {selectedReg.status === 'DOCS_SUBMITTED' && (
-                   <div className="card p-8 space-y-8 bg-white">
-                      <div className="flex items-center space-x-3 border-b border-slate-100 pb-4">
-                         <Calendar className="text-primary" size={20} />
-                         <h3 className="font-bold italic tracking-tighter text-slate-900 text-lg uppercase">Penjadwalan Sidang Munaqosyah</h3>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                         <div className="space-y-1">
-                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Hari & Tanggal</label>
-                            <div className="flex gap-2">
-                               <input id="hari-s" placeholder="Hari" className="input-field text-xs shadow-sm bg-white" />
-                               <input id="tgl-s" type="date" className="input-field text-xs shadow-sm bg-white" />
-                            </div>
-                         </div>
-                         <div className="space-y-1">
-                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Jam & Ruangan</label>
-                            <div className="flex gap-2">
-                               <input id="jam-s" placeholder="Waktu (09:00 WIB)" className="input-field text-xs shadow-sm bg-white" />
-                               <input id="ruang-s" placeholder="Nama Ruang" className="input-field text-xs shadow-sm bg-white" />
-                            </div>
-                         </div>
-                      </div>
-                      <button 
-                         disabled={actionLoading}
-                         onClick={() => {
-                            const schedule = {
-                               tanggal: (document.getElementById('tgl-s') as HTMLInputElement).value,
-                               hari: (document.getElementById('hari-s') as HTMLInputElement).value,
-                               pukul: (document.getElementById('jam-s') as HTMLInputElement).value,
-                               ruang: (document.getElementById('ruang-s') as HTMLInputElement).value
-                            };
-                            if (!schedule.tanggal || !schedule.hari) return toast.error('Lengkapi data jadwal');
-                            handleAction({
-                               ...selectedReg,
-                               status: 'SCHEDULED' as any,
-                               examSchedule: schedule
-                            }, 'Jadwal munaqosyah telah dipublikasikan');
-                         }}
-                         className="btn-primary w-full py-5 shadow-2xl uppercase tracking-[0.2em] text-[11px] font-black h-16"
-                      >
-                        {actionLoading ? <Loader2 className="animate-spin text-white" /> : 'PLOT JADWAL SIDANG SEKARANG'}
-                      </button>
-                   </div>
+                    <div className="card p-8 space-y-8 bg-white border border-slate-200">
+                       <div className="flex items-center space-x-3 border-b border-slate-100 pb-4">
+                          <Calendar className="text-primary" size={20} />
+                          <h3 className="font-bold italic tracking-tighter text-slate-900 text-lg uppercase">Penjadwalan Sidang Munaqosyah</h3>
+                       </div>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-slate-50 rounded-3xl border border-slate-200">
+                          <div className="space-y-1">
+                             <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Hari & Tanggal</label>
+                             <div className="flex gap-2">
+                                <input id="hari-s" placeholder="Hari" className="input-field text-slate-900 bg-white shadow-sm font-bold border border-slate-200 pl-3 text-xs h-12" />
+                                <input id="tgl-s" type="date" className="input-field text-slate-900 bg-white shadow-sm font-bold border border-slate-200 pl-3 text-xs h-12" />
+                             </div>
+                          </div>
+                          <div className="space-y-1">
+                             <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Jam & Ruangan</label>
+                             <div className="flex gap-2">
+                                <input id="jam-s" placeholder="Waktu (e.g., 09:00)" className="input-field text-slate-900 bg-white shadow-sm font-bold border border-slate-200 pl-3 text-xs h-12" />
+                                <input id="ruang-s" placeholder="Nama Ruang" className="input-field text-slate-900 bg-white shadow-sm font-bold border border-slate-200 pl-3 text-xs h-12" />
+                             </div>
+                          </div>
+                       </div>
+                       <button 
+                          disabled={actionLoading}
+                          onClick={() => {
+                             const schedule = {
+                                tanggal: (document.getElementById('tgl-s') as HTMLInputElement).value,
+                                hari: (document.getElementById('hari-s') as HTMLInputElement).value,
+                                pukul: (document.getElementById('jam-s') as HTMLInputElement).value,
+                                ruang: (document.getElementById('ruang-s') as HTMLInputElement).value
+                             };
+                             if (!schedule.tanggal || !schedule.hari) return toast.error('Lengkapi data jadwal');
+                             handleAction({
+                                ...selectedReg,
+                                status: 'SCHEDULED' as any,
+                                examSchedule: schedule
+                             }, 'Jadwal munaqosyah telah dipublikasikan');
+                          }}
+                          className="btn-primary w-full py-5 shadow-2xl uppercase tracking-[0.2em] text-[11px] font-black h-16"
+                       >
+                         {actionLoading ? <Loader2 className="animate-spin text-white" /> : 'PLOT JADWAL SIDANG SEKARANG'}
+                       </button>
+                    </div>
+                 )}
+
+                 {selectedReg.status === 'SCHEDULED' && (
+                    <div className="card p-12 text-center space-y-4 border-dashed bg-white border-slate-200 text-slate-900">
+                       <Calendar className="text-orange-500 mx-auto animate-bounce animate-duration-[2000ms]" size={48} />
+                       <h3 className="font-extrabold text-slate-900 text-xl uppercase">Menunggu Pelaksanaan Sidang</h3>
+                       <p className="text-slate-500 text-sm max-w-md mx-auto leading-relaxed">
+                          Jadwal telah dikirimkan ke mahasiswa ({selectedReg.examSchedule?.hari}, {selectedReg.examSchedule?.tanggal} di {selectedReg.examSchedule?.ruang}). 
+                       </p>
+                       <p className="text-orange-600 font-extrabold text-[10px] uppercase bg-orange-50 px-4 py-2 rounded-full inline-block border border-orange-100">
+                          Mahasiswa wajib mengunggah minimal 3 foto bukti dukung munaqosyah setelah ujian selesai.
+                       </p>
+                    </div>
+                 )}
+
+                 {selectedReg.status === 'GRADING' && (
+                    <div className="card p-10 space-y-8 bg-white border border-slate-200 shadow-xl text-slate-900">
+                       <div className="flex items-center space-x-3 border-b border-slate-100 pb-5">
+                          <CheckCircle2 className="text-primary animate-pulse" size={24} />
+                          <h3 className="text-xl font-black italic tracking-tighter uppercase text-slate-900">Penilaian & Verifikasi Dokumen Skripsi</h3>
+                       </div>
+
+                       {/* 1. Dokumentasi Munaqosyah */}
+                       <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Dokumentasi Sidang Munaqosyah Mahasiswa (Minimal 3 Foto)</span>
+                          {selectedReg.afterExamDocs?.munaqosyahPhotos && selectedReg.afterExamDocs.munaqosyahPhotos.length > 0 ? (
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {selectedReg.afterExamDocs.munaqosyahPhotos.map((url: string, i: number) => (
+                                   <div key={i} className="relative rounded-xl overflow-hidden border border-slate-200 group bg-slate-200 h-28">
+                                      <img src={url} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                      <button 
+                                         onClick={() => window.open(url, '_blank')}
+                                         className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all text-white text-[10px] font-black uppercase tracking-widest"
+                                      >
+                                         <Eye size={12} className="mr-1" /> Lihat Foto
+                                      </button>
+                                   </div>
+                                ))}
+                             </div>
+                          ) : (
+                             <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl flex items-center space-x-3 text-xs text-orange-700 font-bold">
+                                <AlertCircle size={14} />
+                                <span>Mahasiswa belum atau kurang melampirkan berkas foto munaqosyah.</span>
+                             </div>
+                          )}
+                       </div>
+
+                       {/* 2. Dokumentasi Pasca-Sidang & Revisi */}
+                       <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Aktivitas Tambahan Pasca-sidang & Revisi</span>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <span className="text-[9px] font-extrabold text-slate-400 uppercase">A. Bukti Sesi Pasca-Sidang (Sidang Docs)</span>
+                                {selectedReg.afterExamDocs?.sidangDocs && selectedReg.afterExamDocs.sidangDocs.length > 0 ? (
+                                   <div className="flex gap-2">
+                                      {selectedReg.afterExamDocs.sidangDocs.map((url: string, i: number) => (
+                                         <button key={i} onClick={() => window.open(url, '_blank')} className="w-12 h-12 rounded bg-slate-200 overflow-hidden border border-slate-300">
+                                            <img src={url} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                         </button>
+                                      ))}
+                                   </div>
+                                ) : <span className="text-[10px] text-slate-500 italic font-medium block">Belum ada foto pasca-sidang</span>}
+                             </div>
+
+                             <div className="space-y-2">
+                                <span className="text-[9px] font-extrabold text-slate-400 uppercase">B. Bukti Bimbingan Revisi (Revision Docs)</span>
+                                {selectedReg.afterExamDocs?.revisionDocs && selectedReg.afterExamDocs.revisionDocs.length > 0 ? (
+                                   <div className="flex gap-2">
+                                      {selectedReg.afterExamDocs.revisionDocs.map((url: string, i: number) => (
+                                         <button key={i} onClick={() => window.open(url, '_blank')} className="w-12 h-12 rounded bg-slate-200 overflow-hidden border border-slate-300">
+                                            <img src={url} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                         </button>
+                                      ))}
+                                   </div>
+                                ) : <span className="text-[10px] text-slate-500 italic font-medium block">Belum ada foto revisi</span>}
+                             </div>
+                          </div>
+                       </div>
+
+                       {/* 3. Naskah Final & Laman Pengesahan */}
+                       <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="space-y-1">
+                             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-0.5">Naskah Skripsi Final beserta Laman Pengesahan</span>
+                             <p className="text-xs font-bold text-slate-700">
+                                {selectedReg.afterExamDocs?.finalSkripsiUrl ? "Naskah_Skripsi_Final_Lengkap.pdf ✓ Diterima" : "Berkas final belum diunggah"}
+                             </p>
+                          </div>
+                          {selectedReg.afterExamDocs?.finalSkripsiUrl && (
+                             <button 
+                                onClick={() => window.open(selectedReg.afterExamDocs.finalSkripsiUrl, '_blank')} 
+                                className="btn-primary py-3 px-6 text-[10px] uppercase tracking-widest bg-slate-900 hover:bg-slate-800 text-white flex items-center shadow-none h-12"
+                             >
+                                <Download size={14} className="mr-2 text-white" /> UNDUH PDF FINAL
+                             </button>
+                          )}
+                       </div>
+
+                       {/* 4. Action Scoring Panel */}
+                       <div className="pt-6 border-t border-slate-100 space-y-6">
+                          <div className="space-y-2">
+                             <div className="flex justify-between items-center">
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Pemberian Skor & Approval Skripsi</span>
+                                <span className="text-[10px] font-extrabold text-primary bg-primary/10 px-2 py-0.5 rounded uppercase">Bobot Naskah 30% • Sidang 70%</span>
+                             </div>
+                             
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200">
+                                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Nilai Naskah (Bobot 30%) *</label>
+                                   <input 
+                                      value={naskahGrade} onChange={(e) => setNaskahGrade(e.target.value)} 
+                                      type="number" 
+                                      className="input-field h-14 text-2xl font-black italic text-slate-900 bg-white shadow-inner border border-slate-300 pl-3 font-bold" 
+                                      placeholder="0" 
+                                      max={100} 
+                                   />
+                                   <p className="text-[9px] text-slate-400 font-medium mt-1 leading-normal">Kualitas draf skripsi, metodologi riset & penulisan.</p>
+                                </div>
+
+                                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200">
+                                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5">Nilai Sidang/Ujian (Bobot 70%) *</label>
+                                   <input 
+                                      value={sidangGrade} onChange={(e) => setSidangGrade(e.target.value)} 
+                                      type="number" 
+                                      className="input-field h-14 text-2xl font-black italic text-slate-900 bg-white shadow-inner border border-slate-300 pl-3 font-bold" 
+                                      placeholder="0" 
+                                      max={100} 
+                                   />
+                                   <p className="text-[9px] text-slate-400 font-medium mt-1 leading-normal">Pertanggungjawaban, retorika presentasi & argumentasi.</p>
+                                </div>
+                             </div>
+                          </div>
+
+                          <div className="flex flex-col md:flex-row gap-4 pt-2">
+                             <button
+                                disabled={actionLoading}
+                                onClick={async () => {
+                                   const nVal = Number(naskahGrade || 0);
+                                   const sVal = Number(sidangGrade || 0);
+                                   
+                                   
+
+                                   if (!selectedReg.afterExamDocs?.finalSkripsiUrl) {
+                                      return toast.error("Nilai akan keluar setelah mahasiswa mengunggah Naskah Skripsi Final beserta Laman Pengesahan.");
+                                   }
+
+                                   if (isNaN(nVal) || isNaN(sVal) || nVal < 0 || nVal > 100 || sVal < 0 || sVal > 100) {
+                                      return toast.error("Masukkan skor valid antara 0 - 100.");
+                                   }
+
+                                   const { total, gradeText } = skripsiService.calculateFinalGrade(nVal, sVal);
+                                   const confirmed = confirm(`Formula Penilaian: (${nVal} x 30%) + (${sVal} x 70%) = ${total}. Setujui dan berikan kelulusan akademik?`);
+                                   if (!confirmed) return;
+
+                                   handleAction({
+                                      ...selectedReg,
+                                      status: 'COMPLETED',
+                                      grades: {
+                                         naskah: nVal,
+                                         sidang: sVal,
+                                         total,
+                                         gradeText
+                                      }
+                                   }, 'Proses Skripsi selesai! Gelar S.Pd diplot dan nilai diterbitkan.');
+                                }}
+                                className="btn-primary flex-grow h-16 uppercase tracking-[0.1em] text-xs font-black shadow-2xl disabled:opacity-30 disabled:pointer-events-none"
+                             >
+                                {actionLoading ? <Loader2 className="animate-spin text-white" /> : 'Sahkan Approval Revisi & Terbitkan Nilai Akhir'}
+                             </button>
+                             
+                             <button
+                                disabled={actionLoading}
+                                onClick={async () => {
+                                   const reason = prompt('Masukkan catatan/alasan penolakan / draf perlu direvisi kembali:');
+                                   if (!reason) return;
+                                   
+                                   const updatedDocs = {
+                                      ...(selectedReg.afterExamDocs || {}),
+                                      isSubmittedForReview: false,
+                                      status: 'REVISION_NEEDED'
+                                   };
+                                   
+                                   handleAction({
+                                      ...selectedReg,
+                                      rejectionReason: reason,
+                                      afterExamDocs: updatedDocs
+                                   }, 'Dokumen dikembalikan ke mahasiswa untuk direvisi.');
+                                }}
+                                className="btn-primary bg-red-600 px-6 h-16 uppercase tracking-widest text-[10px] text-white hover:bg-red-700 font-bold"
+                             >
+                                Kembalikan Berkas
+                             </button>
+                          </div>
+                       </div>
+                    </div>
                  )}
 
                  {selectedReg.status === 'COMPLETED' && !selectedReg.grades && (
-                   <div className="card p-10 space-y-10 bg-white">
-                      <div className="flex items-center space-x-3 border-b border-slate-100 pb-5">
-                         <Save className="text-primary" size={24} />
-                         <h3 className="text-xl font-black italic tracking-tighter uppercase text-slate-900">Input Skor Akhir Skripsi</h3>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                         <div className="space-y-3 p-8 bg-slate-50 rounded-3xl border border-slate-100">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Naskah Skripsi (30%)</label>
-                            <input id="naskah" type="number" className="input-field h-14 text-2xl font-black italic text-primary bg-white shadow-inner" placeholder="0" max={100} />
-                            <p className="text-[10px] text-slate-400 font-medium italic">Nilai kualitas penulisan dan orisinalitas.</p>
-                         </div>
-                         <div className="space-y-3 p-8 bg-slate-50 rounded-3xl border border-slate-100">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Sidang Munaqosyah (70%)</label>
-                            <input id="sidang" type="number" className="input-field h-14 text-2xl font-black italic text-primary bg-white shadow-inner" placeholder="0" max={100} />
-                            <p className="text-[10px] text-slate-400 font-medium italic">Nilai penguasaan materi dan retorika.</p>
-                         </div>
-                      </div>
-                      <button 
-                         disabled={actionLoading}
-                         onClick={() => {
-                            const n = Number((document.getElementById('naskah') as HTMLInputElement).value);
-                            const s = Number((document.getElementById('sidang') as HTMLInputElement).value);
-                            if (isNaN(n) || isNaN(s) || n > 100 || s > 100) return toast.error('Check input nilai (0-100)');
-                            const { total, gradeText } = skripsiService.calculateFinalGrade(n, s);
-                            handleAction({
-                               ...selectedReg,
-                               status: 'COMPLETED' as any,
-                               grades: { naskah: n, sidang: s, total, gradeText }
-                            }, 'Skripsi COMPLETED! Nilai akhir diterbitkan.');
-                         }}
-                         className="btn-primary w-full py-5 shadow-2xl text-[11px] font-black uppercase tracking-[0.2em]"
-                      >
-                         {actionLoading ? <Loader2 className="animate-spin" /> : 'SIMPAN NILAI & SELESAIKAN PROSES'}
-                      </button>
-                   </div>
+                    <div className="card p-10 space-y-10 bg-white border border-slate-200 shadow-sm text-slate-900">
+                       <div className="flex items-center space-x-3 border-b border-slate-100 pb-5">
+                          <Save className="text-primary" size={24} />
+                          <h3 className="text-xl font-black italic tracking-tighter uppercase text-slate-900">Input Skor Akhir Skripsi</h3>
+                       </div>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div className="space-y-3 p-8 bg-slate-50 rounded-3xl border border-slate-200">
+                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">Naskah Skripsi (30%)</label>
+                             <input id="naskah" type="number" className="input-field h-14 text-2xl font-black italic text-slate-900 bg-white shadow-inner border border-slate-300 pl-3 font-bold" placeholder="0" max={100} />
+                             <p className="text-[10px] text-slate-400 font-medium italic">Nilai kualitas penulisan dan orisinalitas.</p>
+                          </div>
+                          <div className="space-y-3 p-8 bg-slate-50 rounded-3xl border border-slate-200">
+                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">Sidang Munaqosyah (70%)</label>
+                             <input id="sidang" type="number" className="input-field h-14 text-2xl font-black italic text-slate-900 bg-white shadow-inner border border-slate-300 pl-3 font-bold" placeholder="0" max={100} />
+                             <p className="text-[10px] text-slate-400 font-medium italic">Nilai penguasaan materi dan retorika.</p>
+                          </div>
+                       </div>
+                       <button 
+                          disabled={actionLoading}
+                          onClick={() => {
+                             const n = Number((document.getElementById('naskah') as HTMLInputElement).value);
+                             const s = Number((document.getElementById('sidang') as HTMLInputElement).value);
+                             if (isNaN(n) || isNaN(s) || n > 100 || s > 100) return toast.error('Check input nilai (0-100)');
+                             const { total, gradeText } = skripsiService.calculateFinalGrade(n, s);
+                             handleAction({
+                                ...selectedReg,
+                                status: 'COMPLETED' as any,
+                                grades: { naskah: n, sidang: s, total, gradeText }
+                             }, 'Skripsi COMPLETED! Nilai akhir diterbitkan.');
+                          }}
+                          className="btn-primary w-full py-5 shadow-2xl text-[11px] font-black uppercase tracking-[0.2em]"
+                       >
+                          {actionLoading ? <Loader2 className="animate-spin text-white" /> : 'SIMPAN NILAI & SELESAIKAN PROSES'}
+                       </button>
+                    </div>
                  )}
 
                  {selectedReg.status === 'COMPLETED' && selectedReg.grades && (
-                   <div className="card p-12 bg-green-50 border-green-200 text-center space-y-4">
-                      <CheckCircle2 size={64} className="mx-auto text-green-600" />
-                      <h4 className="text-2xl font-black text-green-900 tracking-tighter uppercase italic">Skripsi Completed</h4>
-                      <p className="text-green-700/60 font-medium text-xs">Nilai akhir: <span className="font-black text-green-800">{selectedReg.grades.gradeText} ({selectedReg.grades.total.toFixed(0)})</span></p>
-                      <button onClick={() => setSelectedReg(null)} className="btn-primary bg-green-600 hover:bg-green-700 mt-4 px-10 text-[10px] uppercase tracking-widest">Back to list</button>
-                   </div>
+                    <div className="card p-12 bg-green-50 border-green-200 text-center space-y-4">
+                       <CheckCircle2 size={64} className="mx-auto text-green-600" />
+                       <h4 className="text-2xl font-black text-green-900 tracking-tighter uppercase italic">Skripsi Completed</h4>
+                       <p className="text-green-700 font-medium text-xs">Nilai akhir: <span className="font-black text-green-800">{selectedReg.grades?.gradeText ?? '-'} ({(selectedReg.grades?.total ?? 0).toFixed(0)})</span></p>
+                       <p className="text-slate-500 text-xs">Nilai Naskah (30%): {selectedReg.grades?.naskah ?? 0} | Nilai Sidang (70%): {selectedReg.grades?.sidang ?? 0}</p>
+                       <button onClick={() => setSelectedReg(null)} className="btn-primary bg-green-600 hover:bg-green-700 mt-4 px-10 text-[10px] uppercase tracking-widest text-white font-bold">Back to list</button>
+                    </div>
                  )}
                </motion.div>
            ) : (
-             <div className="card h-[500px] flex items-center justify-center text-slate-300 font-bold uppercase tracking-widest italic border-dashed">Pilih Mahasiswa</div>
+             <div className="card h-[500px] flex items-center justify-center text-slate-400 font-black uppercase tracking-widest italic border-dashed bg-white border-slate-200 shadow-sm text-center">Pilih Mahasiswa untuk Melakukan Verifikasi</div>
            )}
            </AnimatePresence>
         </div>

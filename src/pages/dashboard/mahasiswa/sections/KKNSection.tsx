@@ -656,7 +656,7 @@ function LogbookPhase({ registration, onUpdate, actionLoading }: { registration:
   const [isAdding, setIsAdding] = useState(false);
   const [uploading, setUploading] = useState(false);
   const targetHours = 126;
-  const currentHours = registration.totalHours;
+  const currentHours = registration.totalHours || 0;
 
   const [form, setForm] = useState<Partial<KKNLogbook>>({
     date: new Date().toISOString().split('T')[0],
@@ -808,7 +808,7 @@ function LogbookPhase({ registration, onUpdate, actionLoading }: { registration:
                             <div className="flex items-center space-x-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                                <div className="flex items-center space-x-1.5"><Calendar size={12} className="text-primary" /> <span>{log.date}</span></div>
                                <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                               <div className="flex items-center space-x-1.5"><Clock size={12} className="text-primary" /> <span>{log.hours.toFixed(1)} Hours Total</span></div>
+                               <div className="flex items-center space-x-1.5"><Clock size={12} className="text-primary" /> <span>{(log.hours ?? 0).toFixed(1)} Hours Total</span></div>
                             </div>
                          </div>
                          <div className="flex gap-2">
@@ -836,7 +836,7 @@ function LogbookPhase({ registration, onUpdate, actionLoading }: { registration:
              <div className="relative z-10 space-y-10">
                 <div className="text-center">
                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.5em] italic">Mission Progress</p>
-                   <div className="text-[80px] font-black italic mt-4 leading-none tracking-tighter text-white">{currentHours.toFixed(1)}</div>
+                   <div className="text-[80px] font-black italic mt-4 leading-none tracking-tighter text-white">{(currentHours ?? 0).toFixed(1)}</div>
                    <p className="text-sm font-black text-slate-500 mt-2 uppercase tracking-widest">Total / {targetHours} Hours Target</p>
                 </div>
                 
@@ -950,10 +950,10 @@ function GradesPhase({ registration }: { registration: KKNRegistration }) {
    );
 
    const grades = [
-      { name: 'Mission Planning (RKL)', score: registration.grades.rkl, weight: '5%' },
-      { name: 'Field Execution Force', score: registration.grades.kinerja, weight: '70%' },
-      { name: 'Synthesized Report (LPK)', score: registration.grades.lpk, weight: '15%' },
-      { name: 'Tactical Defense (Responsi)', score: registration.grades.responsi, weight: '10%' },
+      { name: 'Mission Planning (RKL)', score: registration.grades?.rkl ?? 0, weight: '5%' },
+      { name: 'Field Execution Force', score: registration.grades?.kinerja ?? 0, weight: '70%' },
+      { name: 'Synthesized Report (LPK)', score: registration.grades?.lpk ?? 0, weight: '15%' },
+      { name: 'Tactical Defense (Responsi)', score: registration.grades?.responsi ?? 0, weight: '10%' },
    ];
 
    return (
@@ -966,9 +966,9 @@ function GradesPhase({ registration }: { registration: KKNRegistration }) {
                <div className="space-y-4">
                   <p className="text-[12px] font-black text-primary uppercase tracking-[0.6em] italic">Strategic Yudisium Achieved</p>
                   <div className="flex items-center justify-center space-x-10">
-                     <div className="text-[140px] font-black italic text-white tracking-tighter leading-none">{registration.grades.total.toFixed(1)}</div>
+                     <div className="text-[140px] font-black italic text-white tracking-tighter leading-none">{(registration.grades?.total ?? 0).toFixed(1)}</div>
                      <div className="w-[3px] h-32 bg-white/10" />
-                     <div className="text-[120px] font-black italic text-primary tracking-tighter leading-none">{registration.grades.gradeText}</div>
+                     <div className="text-[120px] font-black italic text-primary tracking-tighter leading-none">{registration.grades?.gradeText}</div>
                   </div>
                </div>
                

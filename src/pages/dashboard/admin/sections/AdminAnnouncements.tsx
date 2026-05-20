@@ -73,7 +73,7 @@ export default function AdminAnnouncements() {
         <div className="space-y-0.5">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest mb-2">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            <span>Communication Hub</span>
+            <span>Pusat Informasi</span>
           </div>
           <h1 className="text-4xl font-bold text-slate-900 tracking-tight uppercase italic underline decoration-primary/30 underline-offset-8">Kelola Pengumuman</h1>
           <p className="text-slate-500 font-medium pt-2">Publikasi berita, jadwal, dan informasi penting bagi civitas akademika.</p>
@@ -83,7 +83,7 @@ export default function AdminAnnouncements() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={16} />
               <input 
                 type="text" 
-                placeholder="Search Bulletin..." 
+                placeholder="Cari Berita..." 
                 className="input-field pl-12 py-4 w-64 text-xs font-black uppercase tracking-widest shadow-sm bg-white" 
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -94,7 +94,7 @@ export default function AdminAnnouncements() {
              className="btn-primary h-14 px-8 rounded-2xl flex items-center space-x-3 shadow-xl transition-all hover:scale-105 active:scale-95 group"
            >
               <Plus size={20} className="group-hover:rotate-90 transition-transform" />
-              <span className="text-[11px] font-black uppercase tracking-widest hidden md:block">Post News</span>
+              <span className="text-[11px] font-black uppercase tracking-widest hidden md:block">Tulis Pengumuman</span>
            </button>
         </div>
       </div>
@@ -102,14 +102,14 @@ export default function AdminAnnouncements() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 italic text-slate-400 font-bold uppercase tracking-widest text-xs space-y-4">
            <Loader2 className="animate-spin text-primary" size={40} />
-           <p>Syncing Information Node...</p>
+           <p>Menyelaraskan Pengumuman...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6">
            {filtered.length === 0 ? (
              <div className="card p-20 text-center border-dashed border-2 m-4 rounded-[40px]">
                 <Megaphone size={48} className="mx-auto text-slate-200 mb-4" />
-                <p className="text-slate-300 font-black uppercase tracking-widest text-xs">No active announcements found.</p>
+                <p className="text-slate-300 font-black uppercase tracking-widest text-xs">Belum ada pengumuman aktif.</p>
              </div>
            ) : (
              filtered.map((ann, idx) => (
@@ -178,7 +178,7 @@ export default function AdminAnnouncements() {
 
                 <form onSubmit={handleSave} className="space-y-6">
                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-4">Headline Title</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-4">Judul Pengumuman</label>
                       <input 
                         className="input-field py-5 px-6 font-bold uppercase tracking-widest italic" 
                         placeholder="Judul Pengumuman..."
@@ -189,7 +189,7 @@ export default function AdminAnnouncements() {
 
                    <div className="grid grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-4">Classification</label>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-4">Klasifikasi / Kategori</label>
                         <select 
                           className="input-field py-5 px-6 font-bold uppercase tracking-widest"
                           value={editingAnn?.tag || 'Umum'}
@@ -203,7 +203,7 @@ export default function AdminAnnouncements() {
                         </select>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-4">Post Date</label>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-4">Tanggal Terbit</label>
                         <input 
                           type="date"
                           className="input-field py-5 px-6 font-bold uppercase tracking-widest"
@@ -214,7 +214,7 @@ export default function AdminAnnouncements() {
                    </div>
 
                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-4">Announcement Content</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-4">Konten / Isi Pengumuman</label>
                       <textarea 
                         className="input-field py-6 px-6 h-48 font-medium leading-relaxed" 
                         placeholder="Deskripsi detail pengumuman..."
@@ -224,7 +224,7 @@ export default function AdminAnnouncements() {
                    </div>
 
                    <button type="submit" className="btn-primary w-full h-18 text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-primary/30 rounded-3xl mt-4">
-                      Publish Now
+                      Terbitkan Sekarang
                    </button>
                 </form>
              </motion.div>

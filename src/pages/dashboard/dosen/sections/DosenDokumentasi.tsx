@@ -130,11 +130,11 @@ export default function DosenDokumentasiSection() {
                     <div className="space-y-1">
                        <label className="text-[10px] font-black text-primary uppercase tracking-[0.25em] block pl-1">Jenis Karya</label>
                        <select name="jenis" className="input-field bg-white/5 border-white/10 text-white h-14 appearance-none">
-                          <option className="bg-slate-900 text-white">Penelitian</option>
-                          <option className="bg-slate-900 text-white">Pengabdian</option>
-                          <option className="bg-slate-900 text-white">Buku</option>
-                          <option className="bg-slate-900 text-white">Jurnal</option>
-                          <option className="bg-slate-900 text-white">Lainnya</option>
+                          <option className="bg-white text-slate-900">Penelitian</option>
+                          <option className="bg-white text-slate-900">Pengabdian</option>
+                          <option className="bg-white text-slate-900">Buku</option>
+                          <option className="bg-white text-slate-900">Jurnal</option>
+                          <option className="bg-white text-slate-900">Lainnya</option>
                        </select>
                     </div>
                     <div className="space-y-1">
@@ -145,10 +145,10 @@ export default function DosenDokumentasiSection() {
                  <div className="space-y-1">
                     <label className="text-[10px] font-black text-primary uppercase tracking-[0.25em] block pl-1">Cluster / Platform</label>
                     <select name="platform" className="input-field bg-white/5 border-white/10 text-white h-14">
-                       <option value="REPOSITORY" className="bg-slate-900 text-white">Repository Institusi</option>
-                       <option value="SISTER" className="bg-slate-900 text-white">SISTER</option>
-                       <option value="SINTA" className="bg-slate-900 text-white">SINTA</option>
-                       <option value="LAIN" className="bg-slate-900 text-white">Lainnya</option>
+                       <option value="REPOSITORY" className="bg-white text-slate-900">Repository Institusi</option>
+                       <option value="SISTER" className="bg-white text-slate-900">SISTER</option>
+                       <option value="SINTA" className="bg-white text-slate-900">SINTA</option>
+                       <option value="LAIN" className="bg-white text-slate-900">Lainnya</option>
                     </select>
                  </div>
               </div>

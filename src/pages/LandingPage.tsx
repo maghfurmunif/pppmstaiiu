@@ -14,7 +14,8 @@ export default function LandingPage() {
 
   useEffect(() => {
     const savedRole = localStorage.getItem('user_role');
-    if (savedRole && window.location.pathname === '/') {
+    const savedId = localStorage.getItem('user_id');
+    if (savedRole && savedId && window.location.pathname === '/') {
       navigate(`/dashboard/${savedRole.toLowerCase()}`);
       return;
     }

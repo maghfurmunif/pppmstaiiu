@@ -94,8 +94,8 @@ export default function RegisterPage() {
         <div className="glass-morphism border-white/40 shadow-2xl p-10 md:p-12 space-y-10 rounded-[40px]">
           <div className="text-center space-y-3">
             <div className="w-16 h-16 bg-primary rounded-2xl mx-auto flex items-center justify-center text-white font-bold italic text-2xl shadow-lg mb-4">STAI</div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight italic">Create Portal Account</h1>
-            <p className="text-slate-500 text-sm">Join the academic ecosystem of STAI Ihyaul Ulum</p>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight italic">Buat Akun Portal</h1>
+            <p className="text-slate-500 text-sm">Bergabunglah dengan ekosistem akademik STAI Ihyaul Ulum</p>
           </div>
 
           {/* Stepper Progress */}
@@ -228,7 +228,7 @@ export default function RegisterPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] block ml-1">Secure Password</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] block ml-1">Password Keamanan</label>
                     <div className="relative group">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none" size={18} />
                       <input type="password" className="input-field input-with-icon bg-white/50" placeholder="••••••••" required value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} />
@@ -238,13 +238,13 @@ export default function RegisterPage() {
 
                 <div className="flex space-x-4">
                   <button type="button" onClick={prevStep} className="px-8 py-2 border border-slate-200 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 transition-colors uppercase text-[10px] tracking-widest">
-                    Back
+                    Kembali
                   </button>
                   <button disabled={loading} className="btn-primary flex-grow flex items-center justify-center h-14 shadow-xl shadow-primary/20">
                     {loading ? (
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : (
-                      <>Complete Account <Send size={18} className="ml-2" /></>
+                      <>Selesaikan Pendaftaran <Send size={18} className="ml-2" /></>
                     )}
                   </button>
                 </div>
@@ -254,7 +254,7 @@ export default function RegisterPage() {
 
           <div className="pt-6 border-t border-slate-200/50 text-center">
             <p className="text-sm text-slate-500">
-              Already have an account? <Link to="/login" className="text-primary font-bold hover:underline italic">Sign In Portal</Link>
+              Sudah punya akun? <Link to="/login" className="text-primary font-bold hover:underline italic">Masuk Portal</Link>
             </p>
           </div>
         </div>

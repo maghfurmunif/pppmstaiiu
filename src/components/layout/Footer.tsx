@@ -74,19 +74,17 @@ export default function Footer() {
           {/* Section 3: Map */}
           <div className="space-y-6">
             <h4 className="text-lg font-bold text-white italic tracking-tight">Lokasi Kampus</h4>
-            <div className="rounded-2xl overflow-hidden h-48 border border-white/10 bg-white/5 flex items-center justify-center group">
-               <div className="text-center p-6 space-y-4">
-                  <MapPin className="mx-auto text-primary animate-bounce" size={32} />
-                  <p className="text-xs text-slate-400 font-medium">XGR5+JG Sembungan Kidul, Gresik Regency, East Java</p>
-                  <a 
-                    href="https://www.google.com/maps/search/XGR5%2BJG+Sembungan+Kidul,+Gresik+Regency,+East+Java" 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="inline-block px-4 py-2 bg-primary/20 hover:bg-primary/30 text-primary text-[10px] font-black uppercase tracking-widest rounded-lg transition-colors"
-                  >
-                    Buka di Google Maps
-                  </a>
-               </div>
+            <div className="rounded-2xl overflow-hidden h-48 border border-white/10 bg-white/5 relative group">
+               <iframe 
+                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3959.8396117650637!2d112.4497551!3d-7.028080!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e77e2daed698cdd%3A0xe96cf5d51d536768!2sSTAI%20Ihyaul%20Ulum%20Gresik!5e0!3m2!1sid!2sid!4v1716202400000!5m2!1sid!2sid" 
+                 width="100%" 
+                 height="100%" 
+                 style={{ border: 0 }} 
+                 allowFullScreen={true} 
+                 loading="lazy" 
+                 referrerPolicy="no-referrer"
+                 className="opacity-80 group-hover:opacity-100 transition-opacity"
+               ></iframe>
             </div>
           </div>
         </div>
